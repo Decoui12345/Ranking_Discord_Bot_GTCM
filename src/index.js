@@ -6,7 +6,7 @@
 group you ask for that role's list of members and it should output 
 that info in a clean list */
 // Create some sort of audit log either a new message/embed or in the actual audit log itself
-// Automatically takes away unranked role or any other tier role if there is a change to their roles
+// Automatically takes away unranked role or any other tier role if there is a change to their roles testing testing
 require('dotenv').config();
 const { Client, IntentsBitField } = require('discord.js');
 
