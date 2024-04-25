@@ -1,4 +1,4 @@
-const { Client, Interaction, ApplicationCommandOptionType, PermissionFlagsBits, SlashCommandBuilder, EmbedBuilder, InteractionResponse, Role, userMention, roleMention } = require('discord.js');
+/**const { Client, Interaction, ApplicationCommandOptionType, PermissionFlagsBits, SlashCommandBuilder, EmbedBuilder, InteractionResponse, Role, userMention, roleMention } = require('discord.js');
 // const aREmbed = require('../embeds/aREmbed.js');
 //
 
@@ -9,12 +9,7 @@ const addRankE = new EmbedBuilder()
     .setTimestamp()
 
 module.exports = {
-   /**
-    * 
-    * @param {Client} client 
-    * @param {Interaction} interaction 
-    * @returns 
-    */
+
 
     callback: async (client, interaction) => {
         const targetUserId = interaction.options.get('user-being-ranked').value;
@@ -77,3 +72,4 @@ module.exports = {
         await interaction.channel.send({ embeds: [addRankE] });
     }
 };
+**/
