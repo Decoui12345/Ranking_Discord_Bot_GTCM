@@ -1,4 +1,4 @@
-// What ranks are there?
+// (Created SC) What ranks are there?
 // Who is in ... tier?
 // Let me rank ... into ... tier
 // When setting the rank of someone that updates their role
@@ -19,6 +19,7 @@ const client = new Client({
         IntentsBitField.Flags.GuildMessages,
         IntentsBitField.Flags.GuildPresences,
         IntentsBitField.Flags.MessageContent,
+		IntentsBitField.Flags.GuildModeration,
     ],
 
 });

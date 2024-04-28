@@ -1,3 +1,4 @@
+// Use node registercommands.js to update and register the commands
 const { REST, Routes } = require('discord.js');
 const { clientId, testServer } = require('./config.json');
 require('dotenv').config();
