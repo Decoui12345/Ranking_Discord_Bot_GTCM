@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+/** const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const testrole =  '1197029346188214273';
 const ofofofo = '1197029372616515676';
 const oglyboogsd = '1197029383072915456';
@@ -87,10 +87,10 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
     async execute(interaction) {
-        const user1 = interaction.options.getMember('user1');
-        const user2 = interaction.options.getMember('user2');
-        const roleId1 = interaction.options.getString('role1');
-        const roleId2 = interaction.options.getString('role2');
+        const user1 = interaction.options.getMember('user1')
+        const user2 = interaction.options.getMember('user2')
+        const roleId1 = interaction.options.getString('role1')
+        const roleId2 = interaction.options.getString('role2')
         // const allRankRoles =  ['1197029346188214273', '1197029372616515676', '1197029383072915456']; // testrole, ofofofo, oglyboogsd
         const userRole1 = interaction.options.getString('role1');
         const userRole2 = interaction.options.getString('role2');
@@ -109,7 +109,7 @@ module.exports = {
                     ephemeral: true
                 })
                 return;
-            };
+            }
         // if (hasRole) {
             //const roleToKeep = allRankRoles.find(allRankRoles => userRoles.has(allRankRoles));
             //const rolesToRemove = allRankRoles.filter(allRankRoles => allRankRoles !== roleToKeep);
@@ -118,8 +118,8 @@ module.exports = {
             //    console.log(`Removed roles from ${user.displayName}`);
            // }).catch(console.error);
         //}
-            await user1.roles.add(roleId1);
-            /**if (interaction.options.getMember('user2')) {
+            await user1.roles.add(roleId1)
+            if (interaction.options.getMember('user2')) {
             const userReply2 = async () => {
             if (!user2.roles.cache.has(oglyboogsd)) {
 
@@ -135,7 +135,7 @@ module.exports = {
             await user2.roles.add(roleId2)
 
            
-            }}}**/
+            }}}
 
             
             try {
@@ -144,17 +144,17 @@ module.exports = {
                     try {
                          await user1.roles.remove(ofofofo);
                     } catch (error) {
-                         console.log(`Error in trying to remove other ranked roles from user1: ${error}`);
-                    };
+                         console.log(`Error in trying to remove other ranked roles from user1: ${error}`)
+                    }
                 } 
                  if (userRole1 === ofofofo) {
                      try {
                          await user1.roles.remove(testrole);
                      } catch (error) {
-                         console.log(`Error in trying to remove other ranked roles from user1: ${error}`);
+                         console.log(`Error in trying to remove other ranked roles from user1: ${error}`)
                      }}
-                };
-            /** if (user2) { 
+                }
+            if (user2) { 
                     if (userRole2 === testrole) {
                         try {
                              await user2.roles.remove(ofofofo);
@@ -168,87 +168,38 @@ module.exports = {
                          } catch (error) {
                              console.log(`Error in trying to remove other ranked rolesfrom user2: ${error}`)
                          }}
-                    } **/
+                    }
             } catch (error) {
-                console.log(`There was an error removing ranked roles from user1: ${error}`);
-            };
-        
-         
-        } catch (error) {
-            console.log(`Error in updating ranks for user1: ${error}`)
-        }
-        else {
-            const unrankedPlayerE1 = new EmbedBuilder()
-            .setTitle('🛑 Error: Unranked player. User #1.')
-            .setDescription(`Please use /add-rank to rank a new player: ${user1}`)
-            .setColor('Red')
+                console.log(`There was an error removing ranked roles: ${error}`)
+            }
 
-            await interaction.reply({ embeds: [unrankedPlayerE1], ephemeral: true });
-        };
+           
+            const updateRanksE = new EmbedBuilder()
+                .setTitle('Rank update: ')
+                .setDescription(`${user1} was added into <@&${roleId1}> tier\n`)
+                .setColor('Random')
+                
+                if (interaction.options.getMember('user2')) {
+                   
+                    updateRanksE.setDescription(`${user1} was added into <@&${roleId1}> tier\n\n${user2} was added into <@&${roleId2}> tier`);
+                  }
+
+            await interaction.reply({ embeds: [updateRanksE] })
+        
+        } catch (error) {
+            console.log(`Error in updating ranks: ${error}`)
+        }
         // If the player isn't ranked yet
-        
-
-        //
-        // FOR USER2
-        //
-
-        if (user2) {
-            try {
-            if (!user2.roles.cache.has(oglyboogsd)) { 
-
-                // const user2 = interaction.options.getMember('user2')
-                // Already ranked in the spot they're trying to rank them to
-                if (user2.roles.cache.has(roleId2)) {
-                    interaction.reply({
-                        content: `${user2} is already ranked in <@&${roleId2}>`,
-                        ephemeral: true
-                    })
-                    return;
-                }
-            await user2.roles.add(roleId2);
-
-            try {
-            if (user2) { 
-                if (userRole2 === testrole) {
-                    try {
-                         await user2.roles.remove(ofofofo);
-                    } catch (error) {
-                         console.log(`Error in trying to remove other ranked roles from user2: ${error}`);
-                    };
-                } 
-                 if (userRole2 === ofofofo) {
-                     try {
-                         await user2.roles.remove(testrole);
-                     } catch (error) {
-                         console.log(`Error in trying to remove other ranked rolesfrom user2: ${error}`);
-                     }}
-                };
-        } catch (error) {
-            console.log(`There was an error removing ranked roles: ${error}`);
-        };
-
-        } else {
-            const unrankedPlayerE2 = new EmbedBuilder()
-            .setTitle('🛑 Error: Unranked player. User #2.')
-            .setDescription(`Please use /add-rank to rank a new player: ${user2}`)
+        else {
+            const unrankedPlayerE = new EmbedBuilder()
+            .setTitle('🛑 Error: Unranked player.')
+            .setDescription('Please use /add-rank to rank a new player.')
             .setColor('Red')
 
-            await interaction.reply({ embeds: [unrankedPlayerE2], ephemeral: true });
+            await interaction.reply({ embeds: [unrankedPlayerE], ephemeral: true })
         }
-    } catch (error) {
-        console.log(`Error in updating ranks for user2: ${error}`);
-    };
-    };
-   
-    const updateRanksE = new EmbedBuilder()
-    .setTitle('Rank update: ')
-    .setDescription(`${user1} was added into <@&${roleId1}> tier\n`)
-    .setColor('Random')
-    
-    if (user2) {
-       
-        updateRanksE.setDescription(`${user1} was added into <@&${roleId1}> tier\n\n${user2} was added into <@&${roleId2}> tier`);
-      }
+        
+        
 
-await interaction.reply({ embeds: [updateRanksE] });
-    }};
+    }}
+**/
