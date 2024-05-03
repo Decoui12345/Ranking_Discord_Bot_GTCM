@@ -89,6 +89,7 @@ module.exports = {
     async execute(interaction) {
         const user1 = interaction.options.getMember('user1');
         const user2 = interaction.options.getMember('user2');
+        const allGivenUsers = interaction.options.getMember('user1', 'user2');
         const roleId1 = interaction.options.getString('role1');
         const roleId2 = interaction.options.getString('role2');
         // const allRankRoles =  ['1197029346188214273', '1197029372616515676', '1197029383072915456']; // testrole, ofofofo, oglyboogsd
@@ -98,7 +99,8 @@ module.exports = {
         // const hasRole = allRankRoles.some(allRankRoles => userRoles.has(allRankRoles));
 
         // If the user is already ranked, with their respective ranked role
-        if (!user1.roles.cache.has(oglyboogsd)) try {
+        if (!user1.roles.cache.has(oglyboogsd) && !user2.roles.cache.has(oglyboogsd)) {
+            try {
 
             // const user1 = interaction.options.getMember('user1')
             // const roleId1 = interaction.options.getString('role1')
@@ -177,14 +179,14 @@ module.exports = {
         } catch (error) {
             console.log(`Error in updating ranks for user1: ${error}`)
         }
-        else {
+        /** else {
             const unrankedPlayerE1 = new EmbedBuilder()
             .setTitle('🛑 Error: Unranked player. User #1.')
             .setDescription(`Please use /add-rank to rank a new player: ${user1}`)
             .setColor('Red')
 
             await interaction.reply({ embeds: [unrankedPlayerE1], ephemeral: true });
-        };
+        };**/
         // If the player isn't ranked yet
         
 
@@ -226,15 +228,7 @@ module.exports = {
         } catch (error) {
             console.log(`There was an error removing ranked roles: ${error}`);
         };
-
-        } else {
-            const unrankedPlayerE2 = new EmbedBuilder()
-            .setTitle('🛑 Error: Unranked player. User #2.')
-            .setDescription(`Please use /add-rank to rank a new player: ${user2}`)
-            .setColor('Red')
-
-            await interaction.reply({ embeds: [unrankedPlayerE2], ephemeral: true });
-        }
+    }
     } catch (error) {
         console.log(`Error in updating ranks for user2: ${error}`);
     };
@@ -251,4 +245,27 @@ module.exports = {
       }
 
 await interaction.reply({ embeds: [updateRanksE] });
-    }};
+    }
+    else {
+        const unrankedPlayers = new EmbedBuilder()
+        .setTitle('🛑 Error: Unranked player(s).')
+        .setDescription(`Please use /add-rank to rank a new player.`)
+        .setColor('Red')
+
+        if (user1.roles.cache.has(oglyboogsd)) {
+            unrankedPlayers.setTitle('🛑 Error: Unranked player(s). User1.')
+            unrankedPlayers.setDescription(`Please use /add-rank to rank a new player: ${user1}`)
+        };
+        if (user2.roles.cache.has(oglyboogsd)) {
+            unrankedPlayers.setTitle('🛑 Error: Unranked player(s). User2.')
+            unrankedPlayers.setDescription(`Please use /add-rank to rank a new player: ${user2}`)
+        };
+        if (user1.roles.cache.has(oglyboogsd) && user2.roles.cache.has(oglyboogsd) ) {
+            unrankedPlayers.setTitle('🛑 Error: Unranked player(s). User1, User2.')
+            unrankedPlayers.setDescription(`Please use /add-rank to rank a new player: ${user1}, ${user2}`)
+        };
+
+        await interaction.reply({ embeds: [unrankedPlayers], ephemeral: true });
+    }
+
+}};
