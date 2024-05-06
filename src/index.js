@@ -9,6 +9,7 @@ that info in a clean list */
 // Automatically takes away unranked role or any other tier role if there is a change to their roles testing testing
 // Maybe the ability for people to complain about certain ranks, etc
 // have a channel dedicated to displaying current ranks 
+// add history to rankPosition
 const fs = require('node:fs');
 const path = require('node:path');
 require('dotenv').config();

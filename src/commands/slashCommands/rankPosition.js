@@ -36,3 +36,57 @@ module.exports = {
 
     }
 };
+
+
+
+/** module.exports = {
+    // Slash command data definition
+
+    async execute(interaction) {
+        // Retrieve the specified user from the command options
+        const user = interaction.options.getMember('user');
+
+        // If user is not specified or not found
+        if (!user) {
+            return interaction.reply({
+                content: 'Please specify a valid user.',
+                ephemeral: true // Only visible to the user who issued the command
+            });
+        }
+
+        // Extract the roles of the specified user
+        const userRoles = user.roles.cache;
+
+        // Map user's roles to their corresponding ranks
+        const ranks = {
+            '1197029346188214273': 'testrole',
+            '1197029372616515676': 'ofofofo',
+            '1197029383072915456': 'oglyboogsd',
+            // Add more role ID to rank mappings as needed
+        };
+
+        // Filter user's roles to get only the ranked roles
+        const rankedRoles = userRoles.filter(role => ranks.hasOwnProperty(role.id));
+
+        // If user has no ranked roles
+        if (rankedRoles.size === 0) {
+            return interaction.reply({
+                content: `${user} does not have any ranked roles.`,
+                ephemeral: true
+            });
+        }
+
+        // Construct embed message
+        const embed = new Discord.MessageEmbed()
+            .setTitle(`${user.displayName}'s Ranks`)
+            .setColor('#0099ff')
+            .setDescription('Here are the ranks of the specified user:')
+            .addFields(
+                ...rankedRoles.map(role => ({ name: ranks[role.id], value: `<@&${role.id}>`, inline: true }))
+            );
+
+        // Send embed message as a response to the slash command
+        interaction.reply({ embeds: [embed] });
+    }
+};
+ **/
