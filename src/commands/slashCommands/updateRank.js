@@ -1,3 +1,11 @@
+// TO TEST:
+// Rank 1 user from unranked to a random rank (Should emit error saying their unranked and won't update roles, ephemeral)
+// Rank 2+ users doing ^^^ (Should emit error saying they are unranked and won't update roles, ephemeral)
+// Rank 1 user from unranked to something and 1+ user to different ranks (Should emit error saying they are unranked and won't update roles for anyone, ephemeral)
+// Rank 1 user to the same rank and 1+ users to different ranks (Should emit error saying they are already ranked there and won't update roles for anyone, ephemeral)
+// Rank 2+ users normally should say if they get promoted/demoted appropriately 
+// IF BROKEN FIX DUH
+
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const testrole =  '1197029346188214273';
 const ofofofo = '1197029372616515676';
@@ -118,6 +126,7 @@ module.exports = {
         const demotedPlayers = [];
         // Check for already ranked players
         const rankedPlayers = users.filter((user, index) => user && user.roles.cache.has(roleIds[index]));
+        let shouldUpdateRoles = true;
 
         // Error embed for ranked players
         if (rankedPlayers.length > 0) {
@@ -129,32 +138,50 @@ module.exports = {
             await interaction.reply({ embeds: [alreadyRankedE], ephemeral: true });
             return;
         }
-        // Loop through users to update roles and push users to the empty arrays defined above
+
+    
+        // Check if any user is unranked
         for (let i = 0; i < users.length; i++) {
             const user = users[i];
-            if (user) {
-                if (user.roles.cache.has(oglyboogsd)) {
-                    unrankedPlayers.push(user);
-                } else {
-                    if (!user.roles.cache.has(roleIds[i])) {
-                        await user.roles.add(roleIds[i]);
-                        if (userRoles[i] === testrole) {
-                            await user.roles.remove(ofofofo);
-                            promotedPlayers.push(user);
-                        } else if (userRoles[i] === ofofofo) {
-                            await user.roles.remove(testrole);
-                            demotedPlayers.push(user);
-                        }
-                    }
+            if (user && user.roles.cache.has(oglyboogsd)) {
+                unrankedPlayers.push(user);
+                shouldUpdateRoles = false; // Set to false if any user is unranked
+            }
+        }
+    
+        // If any user is unranked, display error message and return
+        if (!shouldUpdateRoles) {
+            const unrankedPlayersE = new EmbedBuilder()
+                .setTitle('🛑 Error: Unranked player(s)')
+                .setColor('Red')
+                .setDescription(`Please use /add-rank to rank the following player(s): ${unrankedPlayers.join(', ')}`);
+            await interaction.reply({ embeds: [unrankedPlayersE], ephemeral: true });
+            return;
+        }
+
+        // Loop through users to update roles and push users to the empty arrays defined above
+        // Continue with role updates for all users
+    for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        if (user) {
+            if (!user.roles.cache.has(roleIds[i])) {
+                await user.roles.add(roleIds[i]);
+                if (userRoles[i] === testrole) {
+                    await user.roles.remove(ofofofo);
+                    promotedPlayers.push({ user, role: userRoles[i] }); // Store both user and role
+                } else if (userRoles[i] === ofofofo) {
+                    await user.roles.remove(testrole);
+                    demotedPlayers.push({ user, role: userRoles[i] }); // Store both user and role
                 }
             }
         }
+    }
 
         if (promotedPlayers.length > 0) {
             let promotionMessage = '';
             for (let i = 0; i < promotedPlayers.length; i++) {
-                const user = promotedPlayers[i];
-                promotionMessage += `- ${user} was moved up to <@&${roleIds[i]}> tier\n\n`;
+                const { user, role } = promotedPlayers[i];
+                promotionMessage += `- ${user} was moved up to <@&${role}> tier\n\n`;
             }
             updateRanksE.addFields({ name: 'Promotions:', value: promotionMessage });
         }
@@ -162,8 +189,8 @@ module.exports = {
         if (demotedPlayers.length > 0) {
             let demotionMessage = '';
             for (let i = 0; i < demotedPlayers.length; i++) {
-                const user = demotedPlayers[i];
-                demotionMessage += `- ${user} was moved down to <@&${roleIds[i]}> tier\n\n`;
+                const { user, role } = demotedPlayers[i];
+                demotionMessage += `- ${user} was moved down to <@&${role}> tier\n\n`;
             }
             updateRanksE.addFields({ name: 'Demotions:', value: demotionMessage });
         }
