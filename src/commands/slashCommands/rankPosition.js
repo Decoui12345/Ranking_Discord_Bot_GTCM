@@ -1,5 +1,5 @@
 // Slash command deployment on hold for now until I find how to see if the user has 1 of the ranking roles and then display that in an embed
-const { SlashCommandBuilder, EmbedBuilder, Message } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,34 +13,50 @@ module.exports = {
     ),
 
     async execute(interaction) {
-        // const role = message.guild.roles.cache.find(role => role.id === '1197029346188214273');
-        const role = '1197029346188214273' 
-        const roleID =  ['1197029346188214273', '1197029372616515676', '1197029383072915456']; // testrole, ofofofo, oglyboogsdo
+        const user = interaction.options.getMember('user');   
 
-        if(`${interaction.options.getUser('user')}`.has(role)){
-            const noRole = new EmbedBuilder()
-            .setTitle(`🛑 That user doesn't have the ranking roles.`)
-            .setDescription('Please try again after they are either unranked or have a ranked role on them.');
+        const ranks = [ 
+            '1197029346188214273', // testrole
+            '1197029372616515676', // ofofofo
+            '1197029383072915456' // oglyboogsd
+        ];
 
-            await interaction.reply({ embeds: [noRole], ephemeral: true });
+        const userRank = [];
+ // Check if the user has any of the specified roles
+        ranks.forEach(roleId => {
+            if (user.roles.cache.has(roleId)) {
+               userRank.push(roleId);
+            }
+        });
+
+// If user has at least one ranked role
+    if (userRank.length > 0) {
+        const roleMentions = userRank.map(roleId => `<@&${roleId}>`).join(', ');
+
+            // If user has no ranked roles
+        
+                const whatRankE = new EmbedBuilder()
+                .setTitle('Rank: ')
+                .setDescription(`${user} is ${roleMentions} tier`)
+                .setColor('Random')
+                .setThumbnail(user.displayAvatarURL());
+
+            await interaction.reply({ embeds: [whatRankE], ephemeral: true }); 
+            }
+            else {
+                const noRole = new EmbedBuilder()
+                .setTitle(`🛑 That user doesn't have the ranking roles.`)
+                .setDescription('Please try again after they are either unranked or have a ranked role on them.');
+
+                await interaction.reply({ embeds: [noRole], ephemeral: true });
+            }
+
         }
-        else {
-            const roleMention = `<@&${roleID}>`;
-            const whatRankE = new EmbedBuilder()
-            .setTitle('Rank: ')
-            .setDescription(`${interaction.options.getUser('user')} is ${roleMention} tier`)
-            .setColor('Random');
-
-        await interaction.reply({ embeds: [whatRankE], ephemeral: true }); 
-        }
-
-    }
 };
 
 
-
 /** module.exports = {
-    // Slash command data definition
+   
 
     async execute(interaction) {
         // Retrieve the specified user from the command options
@@ -76,17 +92,4 @@ module.exports = {
             });
         }
 
-        // Construct embed message
-        const embed = new Discord.MessageEmbed()
-            .setTitle(`${user.displayName}'s Ranks`)
-            .setColor('#0099ff')
-            .setDescription('Here are the ranks of the specified user:')
-            .addFields(
-                ...rankedRoles.map(role => ({ name: ranks[role.id], value: `<@&${role.id}>`, inline: true }))
-            );
-
-        // Send embed message as a response to the slash command
-        interaction.reply({ embeds: [embed] });
-    }
-};
  **/
