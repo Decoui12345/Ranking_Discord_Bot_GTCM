@@ -10,24 +10,35 @@ that info in a clean list */
 // Maybe the ability for people to complain about certain ranks, etc
 // have a channel dedicated to displaying current ranks 
 // add history to rankPosition
-const fs = require('node:fs');
-const path = require('node:path');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 const { Client, Collection, IntentsBitField } = require('discord.js');
+const mongoose = require('mongoose');
 
 const client = new Client({
     intents: [
         IntentsBitField.Flags.Guilds,
         IntentsBitField.Flags.GuildMembers,
         IntentsBitField.Flags.GuildMessages,
-        IntentsBitField.Flags.GuildPresences,
         IntentsBitField.Flags.MessageContent,
-		IntentsBitField.Flags.GuildModeration,
     ],
-
 });
 
 client.commands = new Collection();
+
+// MongoDB connection
+async function connectToMongoDB() {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('Connected to MongoDB');
+    } catch (error) {
+        console.error('Error connecting to MongoDB:', error);
+        process.exit(1); // Exit the process if connection fails
+    }
+}
+
+// Load commands
 
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -47,6 +58,8 @@ for (const folder of commandFolders) {
 	}
 }
 
+// Load events
+
 const eventsPath = path.join(__dirname, 'events');
 const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
@@ -61,4 +74,15 @@ for (const file of eventFiles) {
 }
 
 
-client.login(process.env.TOKEN);
+// Start the bot
+async function startBot() {
+    try {
+        await connectToMongoDB(); // Connect to MongoDB
+        await client.login(process.env.TOKEN); // Login to Discord
+    } catch (error) {
+        console.error('Error starting bot:', error);
+        process.exit(1); // Exit the process if an error occurs
+    }
+}
+
+startBot();

@@ -1,26 +1,22 @@
 const { Events } = require('discord.js');
 
 module.exports = {
-	name: Events.InteractionCreate,
-	async execute(interaction) {
-		if (!interaction.isChatInputCommand()) return;
+    name: Events.InteractionCreate,
+    async execute(interaction) {
+        try {
+            if (!interaction.isCommand()) return; // Looks for commands like slash commands now not just chat inputs
 
-		const command = interaction.client.commands.get(interaction.commandName);
+            const command = interaction.client.commands.get(interaction.commandName);
 
-		if (!command) {
-			console.error(`No command matching ${interaction.commandName} was found.`);
-			return;
-		}
+            if (!command) {
+                console.error(`No command matching ${interaction.commandName} was found.`);
+                return interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
+            }
 
-		try {
-			await command.execute(interaction);
-		} catch (error) {
-			console.error(error);
-			if (interaction.replied || interaction.deferred) {
-				await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-			} else {
-				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
-			}
-		}
-	},
+            await command.execute(interaction);
+        } catch (error) {
+            console.error('Error executing command:', error);
+            await interaction.reply({ content: 'An error occurred while executing this command.', ephemeral: true });
+        }
+    },
 };
