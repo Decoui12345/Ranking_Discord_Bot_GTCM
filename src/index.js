@@ -10,6 +10,7 @@ that info in a clean list */
 // Maybe the ability for people to complain about certain ranks, etc
 // have a channel dedicated to displaying current ranks 
 // add history to rankPosition
+// rank comparison
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
