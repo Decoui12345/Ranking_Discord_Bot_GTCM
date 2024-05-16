@@ -61,7 +61,7 @@ module.exports = {
                 if (history.length > 0) {
                     let historyDescription = "";
                     history.forEach(entry => {
-                        historyDescription += `<@&${entry.role}> - ${entry.timestamp.toLocaleString()}\n`;
+                        historyDescription += `${entry.role} - ${entry.timestamp.toLocaleString()}\n`;
                     });
                 
                     whatRankE.addFields({ name: 'Rank History', value: historyDescription });
