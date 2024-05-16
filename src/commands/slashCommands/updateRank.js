@@ -5,172 +5,10 @@
 // Rank 1 user to the same rank and 1+ users to different ranks (Should emit error saying they are already ranked there and won't update roles for anyone, ephemeral)
 // Rank 2+ users normally should say if they get promoted/demoted appropriately 
 // IF BROKEN FIX DUH
-/** const { MongoClient } = require('mongodb');
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-require('dotenv').config();
-
-const testrole = '1197029346188214273';
-const ofofofo = '1197029372616515676';
-const oglyboogsd = '1197029383072915456';
-
-const uri = process.env.MONGODB_URI;
-const dbName = 'rankPosition';
-const collectionName = 'rank_history';
-
-module.exports = {
-    data: new SlashCommandBuilder()
-        .setName('update-ranks')
-        .setDescription('For a ranker to update ranks after an event.')
-        .addUserOption(option =>
-            option.setName('user1')
-                .setDescription('The user you are updating')
-                .setRequired(true))
-        .addStringOption(option =>
-            option.setName('role1')
-                .setDescription('The rank this user is getting.')
-                .setRequired(true)
-                .addChoices(
-                    { name: 'testrole', value: testrole },
-                    { name: 'ofofofo', value: ofofofo },
-                    // { name: 'oglyboogsd', value: oglyboogsd },
-                ))
-        .addUserOption(option =>
-            option.setName('user2')
-                .setDescription('The second user you are updating')
-                .setRequired(false))
-        .addStringOption(option =>
-            option.setName('role2')
-                .setDescription('The rank this user is getting.')
-                .setRequired(false)
-                .addChoices(
-                    { name: 'testrole', value: testrole },
-                    { name: 'ofofofo', value: ofofofo },
-                    // { name: 'oglyboogsd', value: oglyboogsd },
-                ))
-        .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
-
-    async execute(interaction) {
-        await interaction.deferReply();
-
-        const users = [
-            interaction.options.getMember('user1'),
-            interaction.options.getMember('user2'),
-        ];
-
-        const roleIds = [
-            interaction.options.getString('role1'),
-            interaction.options.getString('role2'),
-        ];
-
-        const client = new MongoClient(uri);
-
-        const updateRanksE = new EmbedBuilder()
-            .setTitle('Rank update:')
-            .setColor('Random');
-
-        const unrankedPlayersE = new EmbedBuilder()
-            .setTitle('🎉 New ranked players!!! 🎉')
-            .setColor('Green');
-
-        const unrankedPlayers = [];
-        const promotedPlayers = [];
-        const demotedPlayers = [];
-
-        const rankedPlayers = users.filter((user, index) => user && user.roles.cache.has(roleIds[index]));
-
-        if (rankedPlayers.length > 0) {
-            const alreadyRankedE = new EmbedBuilder()
-                .setTitle('🛑 Error: Player is already ranked in the tier you tried.')
-                .setDescription(`The following player(s) you tried to rank are already ranked: ${rankedPlayers.join(', ')}`)
-                .setColor('Red');
-            await interaction.editReply({ embeds: [alreadyRankedE] });
-            return;
-        }
-
-        for (let i = 0; i < users.length; i++) {
-            const user = users[i];
-            if (user && user.roles.cache.has(oglyboogsd)) {
-                unrankedPlayers.push({ user, role: roleIds[i] });
-            }
-        }
-
-        try {
-            await client.connect();
-            const database = client.db(dbName);
-            const collection = database.collection(collectionName);
-
-            const rankChanges = [];
-
-            for (let i = 0; i < users.length; i++) {
-                const user = users[i];
-                if (user) {
-                    const role = `<@&${roleIds[i]}>`;
-                    if (!user.roles.cache.has(roleIds[i])) {
-                        await user.roles.add(roleIds[i]);
-                        rankChanges.push({
-                            userId: user.id,
-                            username: user.user.tag,
-                            role,
-                            timestamp: new Date()
-                        });
-                        if (user.roles.cache.has(oglyboogsd)) {
-                            await user.roles.remove(oglyboogsd);
-                        } else if (roleIds[i] === testrole) {
-                            await user.roles.remove(ofofofo);
-                            promotedPlayers.push({ user, role: roleIds[i] });
-                        } else if (roleIds[i] === ofofofo) {
-                            await user.roles.remove(testrole);
-                            demotedPlayers.push({ user, role: roleIds[i] });
-                        }
-                    }
-                }
-            }
-
-            if (rankChanges.length > 0) {
-                await collection.insertMany(rankChanges);
-            }
-        } finally {
-            await client.close();
-        }
-
-        if (promotedPlayers.length > 0) {
-            const promotionMessage = promotedPlayers.map(({ user, role }) => `- ${user} was moved up to <@&${role}> tier`).join('\n\n');
-            updateRanksE.addFields({ name: 'Promotions:', value: promotionMessage });
-        }
-
-        if (demotedPlayers.length > 0) {
-            const demotionMessage = demotedPlayers.map(({ user, role }) => `- ${user} was moved down to <@&${role}> tier`).join('\n\n');
-            updateRanksE.addFields({ name: 'Demotions:', value: demotionMessage });
-        }
-
-        if (unrankedPlayers.length > 0) {
-            const unRankedPlayerMessage = unrankedPlayers.map(({ user, role }) => `- ${user} was added into tiers at <@&${role}>`).join('\n\n');
-            unrankedPlayersE.addFields({ name: 'Newly Ranked players:', value: unRankedPlayerMessage });
-        }
-
-        const embedsToSend = [];
-        if (promotedPlayers.length > 0 || demotedPlayers.length > 0) {
-            embedsToSend.push(updateRanksE);
-        }
-        if (unrankedPlayers.length > 0) {
-            embedsToSend.push(unrankedPlayersE);
-        }
-     
-        if (embedsToSend.length > 0) {
-    // Send the message with embeds and make it visible to everyone
-        await interaction.editReply({ embeds: embedsToSend });
-        } else {
-            // If no changes were made, send a message indicating that and keep it ephemeral
-            await interaction.editReply({ content: 'No changes were made.' });
-        }
-    }
-}; **/
-
-
-
 const { MongoClient } = require('mongodb');
-const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, TextChannel } = require('discord.js');
 require('dotenv').config();
+const logChannelId = '1161364718846488627';
 
 const testrole = '1197029346188214273';
 const ofofofo = '1197029372616515676';
@@ -221,6 +59,8 @@ module.exports = {
 
     async execute(interaction) {
         await interaction.deferReply();
+        // Log who executed the command
+        console.log(`Ranker: ${interaction.user.tag} executed the command.`);
 
         const user1 = interaction.options.getMember('user1');
         const user2 = interaction.options.getMember('user2');
@@ -260,11 +100,13 @@ module.exports = {
 
         const updateRanksE = new EmbedBuilder()
             .setTitle('Rank update:')
-            .setColor('Random');
+            .setColor('Random')
+            .setTimestamp();
 
         const unrankedPlayersE = new EmbedBuilder()
             .setTitle('🎉 New ranked players!!! 🎉')
-            .setColor('Green');
+            .setColor('Green')
+            .setTimestamp();
 
         const unrankedPlayers = [];
         const promotedPlayers = [];
@@ -386,5 +228,35 @@ module.exports = {
         } else {
             await interaction.editReply({ content: 'No changes were made.', ephemeral: true });
         }
+        
+        
+        // Fetch the channel where you want to send the log 
+    const logChannel = interaction.client.channels.cache.get(logChannelId);
+    
+    const logEmbed = new EmbedBuilder()
+    .setColor('Random')
+    .addFields(
+        { name: 'Ranker that executed the command:', value: `${interaction.user}`},
+        { name: 'User1', value: `${user1}`, inline: true },
+        { name: 'Role1', value: `<@&${role1}>`, inline: true },
+        { name: '\u200B', value: '\u200B', inline: true })
+    .setTimestamp()
+    .setAuthor({ name: 'Rank update Logs', iconURL: interaction.user.avatarURL() });
+
+if (user2 && role2) {
+    logEmbed.addFields(
+        { name: 'User2', value: `${user2}`, inline: true },
+        { name: 'Role2', value: `<@&${role2}>`, inline: true },
+        { name: '\u200B', value: '\u200B', inline: true });
+}
+    // Check if the log channel exists and is a text channel
+    if (logChannel instanceof TextChannel) {
+        // Send the log embed to the log channel
+        logChannel.send({ embeds: [logEmbed] })
+            .then(() => console.log('Log sent to the log channel.'))
+            .catch(error => console.error('Failed to send log to the log channel:', error));
+    } else {
+        console.error('Invalid log channel or log channel is not a text channel.');
+    }
     }
 };
