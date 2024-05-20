@@ -18,6 +18,8 @@ const path = require('path');
 require('dotenv').config();
 const { Client, Collection, IntentsBitField } = require('discord.js');
 const mongoose = require('mongoose');
+const { connectToMongoDB } = require('../database');
+const { clientId, testServer } = require('../config.json')
 
 const client = new Client({
     intents: [
@@ -27,11 +29,11 @@ const client = new Client({
         IntentsBitField.Flags.MessageContent,
     ],
 });
-
+require('../populateDatabase')(client);
 client.commands = new Collection();
 
 // MongoDB connection
-async function connectToMongoDB() {
+/**async function connectToMongoDB() {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log('Connected to MongoDB');
@@ -39,11 +41,45 @@ async function connectToMongoDB() {
         console.error('Error connecting to MongoDB:', error);
         process.exit(1); // Exit the process if connection fails
     }
-}
+}**/
 
 // Load commands
 
+const loadCommands = (directory) => {
+    const commandFiles = fs.readdirSync(directory, { withFileTypes: true });
+    for (const file of commandFiles) {
+        if (file.isDirectory()) {
+            loadCommands(path.join(directory, file.name));
+        } else if (file.name.endsWith('.js')) {
+            const command = require(path.join(directory, file.name));
+            if ('data' in command && 'execute' in command) {
+                client.commands.set(command.data.name, command);
+                console.log(`Loaded command: ${command.data.name}`);
+            } else {
+                console.log(`[WARNING] The command at ${file.name} is missing a required "data" or "execute" property.`);
+            }
+        }
+    }
+};
+
 const foldersPath = path.join(__dirname, 'commands');
+loadCommands(foldersPath);
+
+const loadEvents = (directory) => {
+    const eventFiles = fs.readdirSync(directory).filter(file => file.endsWith('.js'));
+    for (const file of eventFiles) {
+        const filePath = path.join(directory, file);
+        const event = require(filePath);
+        if (event.once) {
+            client.once(event.name, (...args) => event.execute(...args));
+        } else {
+            client.on(event.name, (...args) => event.execute(...args));
+        }
+    }
+};
+
+loadEvents(path.join(__dirname, 'events'));
+/**const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
 for (const folder of commandFolders) {
@@ -74,7 +110,7 @@ for (const file of eventFiles) {
 	} else {
 		client.on(event.name, (...args) => event.execute(...args));
 	}
-}
+}**/
 
 
 // Start the bot

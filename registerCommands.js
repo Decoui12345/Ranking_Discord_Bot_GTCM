@@ -1,5 +1,5 @@
 // Use node registercommands.js to update and register the commands
-const { REST, Routes } = require('discord.js');
+/**const { REST, Routes } = require('discord.js');
 const { clientId, testServer } = require('./config.json');
 require('dotenv').config();
 const fs = require('node:fs');
@@ -46,4 +46,49 @@ const rest = new REST().setToken(process.env.TOKEN);
 		// And of course, make sure you catch and log any errors!
 		console.error(error);
 	}
+})();**/
+
+
+
+const { REST, Routes } = require('discord.js');
+const { clientId, testServer } = require('./config.json');
+require('dotenv').config();
+const fs = require('fs');
+const path = require('path');
+
+const commands = [];
+const loadCommands = (directory) => {
+    const commandFiles = fs.readdirSync(directory, { withFileTypes: true });
+    for (const file of commandFiles) {
+        if (file.isDirectory()) {
+            loadCommands(path.join(directory, file.name));
+        } else if (file.name.endsWith('.js')) {
+            const command = require(path.join(directory, file.name));
+            if ('data' in command && 'execute' in command) {
+                commands.push(command.data.toJSON());
+            } else {
+                console.log(`[WARNING] The command at ${file.name} is missing a required "data" or "execute" property.`);
+            }
+        }
+    }
+};
+
+const foldersPath = path.join(__dirname, './src/commands');
+loadCommands(foldersPath);
+
+const rest = new REST().setToken(process.env.TOKEN);
+
+(async () => {
+    try {
+        console.log(`Started refreshing ${commands.length} application (/) commands.`);
+
+        const data = await rest.put(
+            Routes.applicationGuildCommands(clientId, testServer),
+            { body: commands },
+        );
+
+        console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+    } catch (error) {
+        console.error(error);
+    }
 })();
