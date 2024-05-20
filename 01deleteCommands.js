@@ -5,7 +5,7 @@ require('dotenv').config();
 const rest = new REST().setToken(process.env.TOKEN);
 
 // ...
-const commandId = '1233213226687397968'
+const commandId = '1241558696983527567'
 // for guild-based commands
 rest.delete(Routes.applicationGuildCommand(clientId, testServer, commandId))
 	.then(() => console.log('Successfully deleted guild command'))
