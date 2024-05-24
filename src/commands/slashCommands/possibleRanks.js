@@ -6,16 +6,34 @@ module.exports = {
     .setDescription('Displays a list of all the tiers you can be in.'),
 
     async execute(interaction) {
-        const roleID = ['1197029346188214273', '1197029372616515676', '1197029383072915456']; // testrole, ofofofo, oglyboogs
+        const roleID = [
+            '1143694702042947614', // diamond
+            '1143698998872514560', // plat
+            '1143697130511409193', // gold
+            '1143704641398386718', // silver
+            '1143702378244219050', // iron
+            '1201228978183221439', // copper
+            '1143970454382596096', // unranked
+        ];
         const firstRole = roleID[0];
         const secondRole = roleID[1];
         const thirdRole = roleID[2];
-        const roleMention = `<@&${firstRole}>\n\n` + `<@&${secondRole}>\n\n` + `<@&${thirdRole}>`;
+        const fourthRole = roleID[3];
+        const fifthRole = roleID[4];
+        const sixthRole = roleID[5];
+        const seventhRole = roleID[6];
+        const roleMention = `<@&${firstRole}>\n\n` + 
+                            `<@&${secondRole}>\n\n` + 
+                            `<@&${thirdRole}>\n\n` + 
+                            `<@&${fourthRole}>\n\n` + 
+                            `<@&${fifthRole}>\n\n` + 
+                            `<@&${sixthRole}>\n\n` + 
+                            `<@&${seventhRole}>\n\n` ;
 
         const possibleRanksE = new EmbedBuilder()
         .setTitle('Tiers:')
         .setDescription(`${roleMention}`)
-        .addFields({ name: 'tseting', value: `${roleMention}`, inline: false })
+        //.addFields({ name: 'tseting', value: `${roleMention}`, inline: false })
         .setColor('Random');
 
         await interaction.reply({ embeds: [possibleRanksE], ephemeral: true });

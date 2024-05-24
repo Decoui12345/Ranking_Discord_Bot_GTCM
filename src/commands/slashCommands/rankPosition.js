@@ -22,9 +22,13 @@ module.exports = {
         const user = interaction.options.getMember('user');   
 
         const ranks = [ 
-            '1197029346188214273', // testrole
-            '1197029372616515676', // ofofofo
-            '1197029383072915456' // oglyboogsd
+            '1143694702042947614', // diamond
+            '1143698998872514560', // plat
+            '1143697130511409193', // gold
+            '1143704641398386718', // silver
+            '1143702378244219050', // iron
+            '1201228978183221439', // copper
+            '1143970454382596096', // unranked
         ];
 
         const userRank = [];
