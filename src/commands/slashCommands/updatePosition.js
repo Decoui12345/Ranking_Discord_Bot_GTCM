@@ -5,7 +5,7 @@ require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
 const leaderboardMessageId = process.env.LEADERBOARD_MESSAGE_ID;
 
-const logChannelId = '1161364718846488627';
+const logChannelId = '1144074199716073492';
 // const diamondTierGamer = '1143694702042947614';
 // const platinumTierGamer = '1143698998872514560';
 // const goldTierGamer = '1143697130511409193';
@@ -255,32 +255,6 @@ module.exports = {
                         await logChannel.send({ embeds: [logEmbed] });
                         return;
                     }
-        /**for (const { user, newRank } of rankUpdates) {
-            const userRoles = user.roles.cache;
-            const newRoleId = newRank;
-            
-            if (newRoleId === diamondTierGamer && userRoles.has(platinumTierGamer)) {
-                await user.roles.remove(platinumTierGamer);
-                promotedPlayers.push({ user, role: newRoleId });
-            } else if (newRoleId === platinumTierGamer && userRoles.has(diamondTierGamer)) {
-                await user.roles.remove(diamondTierGamer);
-                demotedPlayers.push({ user, role: newRoleId });
-            }
-            
-            if (!userRoles.has(newRoleId)) {
-                await user.roles.add(newRoleId);
-                if (userRoles.has(unranked)) {
-                    await user.roles.remove(unranked);
-                    unrankedPlayers.push({ user, role: newRoleId });
-                }
-                rankChanges.push({
-                    userId: user.id,
-                    username: user.user.tag,
-                    role: `<@&${newRoleId}>`,
-                    timestamp: new Date()
-                });
-            }
-        }**/
         
         try {
             const database = client.db(dbName);
@@ -357,65 +331,6 @@ module.exports = {
                 } else {
                     await interaction.editReply({ content: 'No changes were made. Users are in the position you wanted them to be at. If this is a mistake please try again.', ephemeral: true });
                 }
-        /**if (promotedPlayers.length > 0 || demotedPlayers.length > 0 || unrankedPlayers.length > 0 || positionChanges.length > 0) {
-        
-            if (promotedPlayers.length > 0) {
-                const promotionMessage = promotedPlayers.map(({ user, role }) => `- ${user} was moved up to <@&${role}> tier`).join('\n\n');
-                updateRanksE.addFields({ name: 'Promotions:', value: promotionMessage });
-            }
-        
-            if (demotedPlayers.length > 0) {
-                const demotionMessage = demotedPlayers.map(({ user, role }) => `- ${user} was moved down to <@&${role}> tier`).join('\n\n');
-                updateRanksE.addFields({ name: 'Demotions:', value: demotionMessage });
-            }
-        
-            if (unrankedPlayers.length > 0) {
-                const unRankedPlayerMessage = unrankedPlayers.map(({ user, role }) => `- ${user} was added into tiers at <@&${role}>`).join('\n\n');
-                unrankedPlayersE.addFields({ name: 'Newly Ranked players:', value: unRankedPlayerMessage });
-            }
-        
-            const positionChangePromotions = positionChanges.filter(change => change.direction === 'up');
-            const positionChangeDemotions = positionChanges.filter(change => change.direction === 'down');
-        
-            if (positionChangePromotions.length > 0) {
-                const promotionMessage = positionChangePromotions.map(({ user, direction, newRank }) => `- ${user} moved ${direction} within <@&${newRank}> rank.`).join('\n\n');
-                // Find if the "Promotions" field already exists
-                const promotionField = updateRanksE.data.fields.find(field => field.name === 'Promotions:');
-                if (promotionField) {
-                    // Append the position changes to the existing "Promotions" field
-                    promotionField.value += `\n\n${promotionMessage}`;
-                } else {
-                    // Create a new "Promotions" field if it doesn't exist
-                    updateRanksE.addFields({ name: 'Promotions:', value: promotionMessage });
-                }
-            }
-        
-            if (positionChangeDemotions.length > 0) {
-                const demotionMessage = positionChangeDemotions.map(({ user, direction, newRank }) => `- ${user} moved ${direction} within <@&${newRank}> rank.`).join('\n\n');
-                // Find if the "Demotions" field already exists
-                const demotionField = updateRanksE.data.fields.find(field => field.name === 'Demotions:');
-                if (demotionField) {
-                    // Append the position changes to the existing "Demotions" field
-                    demotionField.value += `\n\n${demotionMessage}`;
-                } else {
-                    // Create a new "Demotions" field if it doesn't exist
-                    updateRanksE.addFields({ name: 'Demotions:', value: demotionMessage });
-                }
-            }
-        
-        const embedsToSend = [];
-        if (promotedPlayers.length > 0 || demotedPlayers.length > 0 || positionChanges.length > 0) {
-            embedsToSend.push(updateRanksE);
-        }
-        if (unrankedPlayers.length > 0) {
-            embedsToSend.push(unrankedPlayersE);
-        }
-        
-        if (embedsToSend.length > 0) {
-            await interaction.editReply({ embeds: embedsToSend });
-        } else {
-            await interaction.editReply({ content: 'No changes were made.', ephemeral: true });
-        } **/
         
         
         // Update leaderboard message
@@ -451,35 +366,6 @@ module.exports = {
             }
         }
         
-        
-// Function to generate the leaderboard content
-/**async function generateLeaderboardContent() {
-    // Connect to MongoDB
-    const client = new MongoClient(uri);
-    await client.connect();
-
-    const database = client.db(dbName);
-    const collection = database.collection(collectionName);
-
-    // Fetch the leaderboard data from the database
-    const leaderboardData = await collection.find().toArray();
-
-    // Process the data and generate the leaderboard content
-    // Assuming a simple text format for the leaderboard
-    let leaderboardContent = '**Leaderboard**\n\n';
-    for (const entry of leaderboardData) {
-        leaderboardContent += `${entry.position}. ${entry.username} - <@&${entry.role}>\n`;
-    }
-
-    // Close the MongoDB connection
-    await client.close();
-
-    return leaderboardContent;
-}**/
-
-
-
-
 
         async function logEmbeds(logChannel) {
             let fieldCount = 1;
@@ -525,7 +411,7 @@ async function getCurrentPositionFromDatabase(userId) {
 
     try {
         await client.connect();
-        const db = client.db('test');
+        const db = client.db('rankPosition');
         const user = await db.collection('users').findOne({ userId });
         return user ? { currentRank: user.rank, currentPosition: user.position } : null;
     } finally {
@@ -539,7 +425,7 @@ async function shiftUserPositionsWithinRank(rank, currentPosition, newPosition, 
 
     try {
         await client.connect();
-        const db = client.db('test');
+        const db = client.db('rankPosition');
 
         if (shiftDirection === 'upward') {
             await db.collection('users').updateMany(
@@ -563,7 +449,7 @@ async function updateUserPositionInRank(userId, rank, newPosition) {
 
     try {
         await client.connect();
-        const db = client.db('test');
+        const db = client.db('rankPosition');
         await db.collection('users').updateOne(
             { userId, rank },
             { $set: { position: newPosition } }
@@ -579,7 +465,7 @@ async function insertUserRankAndPosition(userId, rank, position) {
 
     try {
         await client.connect();
-        const db = client.db('test');
+        const db = client.db('rankPosition');
 
         // Shift the positions of existing users in the new rank
         await db.collection('users').updateMany(
@@ -603,7 +489,7 @@ async function moveUserToNewRank(userId, currentRank, currentPosition, newRank, 
 
     try {
         await client.connect();
-        const db = client.db('test');
+        const db = client.db('rankPosition');
 
         // Remove the user from the current rank
         await db.collection('users').deleteOne({ userId, rank: currentRank });

@@ -1,3 +1,5 @@
 node_modules
 .env
 public/app/saveForTest.js
+src/commands/slashCommands/updateRank.js
+src/commands/slashCommands/addRank.js
