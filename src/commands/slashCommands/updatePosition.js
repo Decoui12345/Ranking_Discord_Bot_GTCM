@@ -3,9 +3,9 @@ const { MongoClient } = require('mongodb');
 const { getLeaderboardMessage } = require('../../utility/leaderboardUtils');
 require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
-const leaderboardMessageId = process.env.LEADERBOARD_MESSAGE_ID;
+const leaderboardMessageIds = ['1244399339863019538', '1244399342291517461'];
 
-const logChannelId = '1144074199716073492';
+const logChannelId = '1244081913522688010';
 // const diamondTierGamer = '1143694702042947614';
 // const platinumTierGamer = '1143698998872514560';
 // const goldTierGamer = '1143697130511409193';
@@ -20,21 +20,21 @@ const collectionName = 'rank_history';
 
 const rankRoles = {
     diamondTierGamer:  '1143694702042947614',
-    platinumTierGamer:  '1143698998872514560',
-    goldTierGamer:  '1143697130511409193',
-    silverTierGamer:  '1143704641398386718',
-    ironTierGamer:  '1143702378244219050',
+    platinumTierGamer:  '1143697130511409193',
+    goldTierGamer:  '1143698998872514560',
+    silverTierGamer:  '1143702378244219050',
+    ironTierGamer:  '1143704641398386718',
     copperTierGamer:  '1201228978183221439',
     unranked:  '1143970454382596096'
 };
 
 const RANK_CHOICES = [
-    { name: 'diamondTierGamer', value: rankRoles.diamondTierGamer },
-    { name: 'platinumTierGamer', value: rankRoles.platinumTierGamer },
-    { name: 'goldTierGamer', value: rankRoles.goldTierGamer },
-    { name: 'silverTierGamer', value: rankRoles.silverTierGamer },
-    { name: 'ironTierGamer', value: rankRoles.ironTierGamer },
-    { name: 'copperTierGamer', value: rankRoles.copperTierGamer },
+    { name: 'Diamond', value: rankRoles.diamondTierGamer },
+    { name: 'Platinum', value: rankRoles.platinumTierGamer },
+    { name: 'Gold', value: rankRoles.goldTierGamer },
+    { name: 'Silver', value: rankRoles.silverTierGamer },
+    { name: 'Iron', value: rankRoles.ironTierGamer },
+    { name: 'Copper', value: rankRoles.copperTierGamer },
     // { name: 'unranked', value: rankRoles.unranked },
 ];
 
@@ -77,7 +77,7 @@ module.exports = {
         await interaction.deferReply();
         const logChannel = await interaction.client.channels.fetch(logChannelId);
         // Log the update
-        const logEmbed = new EmbedBuilder()
+        const logEmbedError = new EmbedBuilder()
         .setTitle('🛑Leaderboard Failed to update')
         .setDescription('There was an error with updating the latest ranks and positions.')
         .setColor('Red')
@@ -111,22 +111,22 @@ module.exports = {
             
             await interaction.editReply({ embeds: [errorSupplyUserRankPositionE] });
             
-            const logEmbedMissingInfo = new EmbedBuilder()
+            const logEmbedErrorMissingInfo = new EmbedBuilder()
             .setTitle('Missing Information in Command Execution')
             .setDescription(`User ${interaction.user.tag} did not provide required fields: ${errors.join(', ')}.`)
             .setColor('Red')
             .setTimestamp();
             
             if (logChannel instanceof TextChannel) {
-                await logChannel.send({ embeds: [logEmbedMissingInfo] });
+                await logChannel.send({ embeds: [logEmbedErrorMissingInfo] });
             }
             
             return;
         }
         
         if (users.length === 0) {
+            await logChannel.send({ embeds: [logEmbedError] });
             await interaction.editReply({ content: 'At least one user, rank, and position must be specified.', ephemeral: true });
-            await logChannel.send({ embeds: [logEmbed] });
             return;
         }
         
@@ -141,7 +141,7 @@ module.exports = {
             .setTitle(`🛑 Error: Something went wrong while trying to connect to the DB`)
             .setDescription('An error occurred while connecting to the database. Please try again later.');
             await interaction.editReply({ embeds: [mongoDBError], ephemeral: true });
-            await logChannel.send({ embeds: [logEmbed] });
+            await logChannel.send({ embeds: [logEmbedError] });
             return;
         }
         
@@ -157,7 +157,7 @@ module.exports = {
                 .setDescription(`Two or more users are trying to be placed in the same position (${position}) within the same rank (<@&${rank}>). Please correct the positions and try again.`)
                 .setColor('Red');
                 await interaction.editReply({ embeds: [duplicatePositionError], ephemeral: true });
-                await logChannel.send({ embeds: [logEmbed] });
+                await logChannel.send({ embeds: [logEmbedError] });
                 return;
             }
             positionCheck[key] = true;
@@ -212,49 +212,91 @@ module.exports = {
                 await updateUserPositionInRank(user.id, rank, position);
             }
         }
-        try{
+        /**
         for (const { user, newRank } of rankUpdates) {
-            const userRoles = user.roles.cache;
-            const newRoleId = newRank;
-        // await interaction.editReply('User positions within the ranks updated successfully!');
-        const ranks = Object.values(rankRoles).filter(rank => rank !== rankRoles.unranked);
-
+                try {
+                const userRoles = user.roles.cache;
+                const newRoleId = newRank;
+        
+                const ranks = Object.values(rankRoles).filter(rank => rank !== rankRoles.unranked);
+        
+                for (const rank of ranks) {
+                    if (newRoleId === rank && userRoles.has(rank)) {
+                        await user.roles.remove(rank);
+                        if (rank < newRoleId) {
+                            promotedPlayers.push({ user, role: newRoleId });
+                        } else {
+                            demotedPlayers.push({ user, role: newRoleId });
+                        }
+                    }
+                }
+        
+                if (!userRoles.has(newRoleId)) {
+                    await user.roles.add(newRoleId);
+                    rankChanges.push({
+                        userId: user.id,
+                        username: user.user.tag,
+                        role: `<@&${newRoleId}>`,
+                        //position: newPosition,
+                        timestamp: new Date()
+                    });
+                    if (userRoles.has(rankRoles.unranked)) {
+                        await user.roles.remove(rankRoles.unranked);
+                        unrankedPlayers.push({ user, role: newRoleId });
+                    }
+                }**/
+                for (const { user, newRank } of rankUpdates) {
+                    try {
+                        const userRoles = user.roles.cache;
+                        const newRoleId = newRank;
+                
+                        const ranks = Object.values(rankRoles).filter(rank => rank !== rankRoles.unranked);
+                
+                        // Remove all rank roles the user currently has before assigning the new rank
                         for (const rank of ranks) {
-                            if (newRoleId === rank && userRoles.has(rank)) {
+                            if (userRoles.has(rank)) {
                                 await user.roles.remove(rank);
-                                if (rank < newRoleId) {
-                                    promotedPlayers.push({ user, role: newRoleId });
-                                } else {
-                                    demotedPlayers.push({ user, role: newRoleId });
-                                }
+                
+                                // Determine if this is a promotion or demotion
+                                //if (rank === newRoleId) {
+                                    if (rank > newRoleId) {
+                                        promotedPlayers.push({ user, role: newRoleId });
+                                    } else {
+                                        demotedPlayers.push({ user, role: newRoleId });
+                                    }
+                                //}
                             }
                         }
-
+                
+                        // Add the new role if the user doesn't already have it
                         if (!userRoles.has(newRoleId)) {
                             await user.roles.add(newRoleId);
+                            rankChanges.push({
+                                userId: user.id,
+                                username: user.user.tag,
+                                role: `<@&${newRoleId}>`,
+                                timestamp: new Date()
+                            });
+                
+                            // Remove the unranked role if the user has it
                             if (userRoles.has(rankRoles.unranked)) {
                                 await user.roles.remove(rankRoles.unranked);
                                 unrankedPlayers.push({ user, role: newRoleId });
                             }
                         }
-
-                        rankChanges.push({
-                            userId: user.id,
-                            username: user.user.tag,
-                            role: `<@&${newRoleId}>`,
-                            position: newPosition,
-                            timestamp: new Date()
-                        });
-                    }} catch (error) {
-                        console.error(`Failed to modify roles for user ${user.user.tag}:`, error);
-                        const updatingRole = new EmbedBuilder()
-                            .setTitle('🛑 Error: Something went wrong while updating roles.')
-                            .setDescription(`An error occurred while updating roles for ${user}. Please try again later.`)
-                            .setColor('Red');
-                        await interaction.editReply({ embeds: [updatingRole], ephemeral: true });
-                        await logChannel.send({ embeds: [logEmbed] });
-                        return;
-                    }
+        
+            
+        } catch (error) {
+            await logChannel.send({ embeds: [logEmbedError] });
+            console.error(`Failed to modify roles for user ${user.user.tag}:`, error);
+            const updatingRole = new EmbedBuilder()
+                .setTitle('🛑 Error: Something went wrong while updating roles.')
+                .setDescription(`An error occurred while updating roles for ${user}. Please try again later.`)
+                .setColor('Red');
+            await interaction.editReply({ embeds: [updatingRole], ephemeral: true });
+            return;
+        }};
+        
         
         try {
             const database = client.db(dbName);
@@ -264,12 +306,12 @@ module.exports = {
                 await collection.insertMany(rankChanges);
             }
         } catch (error) {
+            await logChannel.send({ embeds: [logEmbedError] });
             console.error('Failed to insert rank changes into MongoDB:', error);
             const mongoDBErrorInsert = new EmbedBuilder()
             .setTitle(`🛑 Error: Something went wrong while trying to insert data to the DB`)
             .setDescription('An error occurred while inserting rank data to the database. Please try again later.');
             await interaction.editReply({ embeds: [mongoDBErrorInsert], ephemeral: true });
-            await logChannel.send({ embeds: [logEmbed] });
             return;
         } finally {
             try {
@@ -318,6 +360,11 @@ module.exports = {
                 unrankedPlayersE.addFields({ name: 'Newly Ranked players:', value: unRankedPlayerMessage });
             }
 
+            // Log for debugging purposes
+    //console.log('Promotion Messages:', promotionMessages);
+    //console.log('Demotion Messages:', demotionMessages);
+    //console.log('Unranked Players:', unrankedPlayers);
+
                     const embedsToSend = [];
                 if (promotedPlayers.length > 0 || demotedPlayers.length > 0 || positionChanges.length > 0) {
                     embedsToSend.push(updateRanksE);
@@ -331,43 +378,63 @@ module.exports = {
                 } else {
                     await interaction.editReply({ content: 'No changes were made. Users are in the position you wanted them to be at. If this is a mistake please try again.', ephemeral: true });
                 }
+        // Updating the leaderboard message(s)
         
+                const leaderboardChannel = interaction.client.channels.cache.get(leaderboardChannelId);
+                if (!leaderboardChannel) {
+                    console.error('Invalid leaderboard channel or not a text channel.');
+                    return await interaction.followUp('Invalid leaderboard channel.');
+                }
         
-        // Update leaderboard message
-        const leaderboardChannel = interaction.client.channels.cache.get(leaderboardChannelId);
-        if (leaderboardChannel) {
-            const leaderboardMessage = await leaderboardChannel.messages.fetch(leaderboardMessageId);
-            if (leaderboardMessage) {
-                const leaderboardContent = await getLeaderboardMessage();
-                await leaderboardMessage.edit(leaderboardContent);
-            } else {
-                console.error('Leaderboard message not found.');
-                await logChannel.send({ embeds: [logEmbed] });
-            }
-        } else {
-            console.error('Invalid leaderboard channel or not a text channel.');
-            await logChannel.send({ embeds: [logEmbed] });
-        };
+                try {
+                    const messageParts = await getLeaderboardMessage();
+                    const existingMessages = await leaderboardChannel.messages.fetch({ limit: 10 });
+                    const leaderboardMessages = leaderboardMessageIds.map(id => existingMessages.get(id));
         
-        //const logChannel = await interaction.client.channels.fetch(logChannelId);
-        // Log the update
-        if (logChannel) {
-            const logEmbed = new EmbedBuilder()
-            .setTitle('Leaderboard Updated')
-            .setDescription('The leaderboard has been updated with the latest ranks and positions.')
-            .setColor('Blue')
-            .setTimestamp();
-            
-            try {
-                await logChannel.send({ embeds: [logEmbed] });
-            } catch (error) {
-                console.error('Failed to send log message:', error);
-                await logChannel.send({ embeds: [logEmbed] });
-            }
-        }
+                    // Update or create leaderboard messages
+                    for (let i = 0; i < messageParts.length; i++) {
+                        if (leaderboardMessages[i]) {
+                            await leaderboardMessages[i].edit(messageParts[i]);
+                        } else {
+                            const newMessage = await leaderboardChannel.send(messageParts[i]);
+                            leaderboardMessageIds.push(newMessage.id);
+                        }
+                    }
+        
+                    // Delete any extra messages
+                    for (let i = messageParts.length; i < leaderboardMessages.length; i++) {
+                        if (leaderboardMessages[i]) {
+                            await leaderboardMessages[i].delete();
+                            leaderboardMessageIds.splice(i, 1);
+                        }
+                    }
+        
+                    //await interaction.followUp('Leaderboard updated successfully.');
+                    //const logChannel = await interaction.client.channels.fetch(logChannelId);
+                    // Log the update
+                    if (logChannel) {
+                        const logEmbed = new EmbedBuilder()
+                        .setTitle('Leaderboard Updated')
+                        .setDescription('The leaderboard has been updated with the latest ranks and positions.')
+                        .setColor('Blue')
+                        .setTimestamp();
+                        
+                        try {
+                            await logChannel.send({ embeds: [logEmbed] });
+                        } catch (error) {
+                            await logChannel.send({ embeds: [logEmbedError] });
+                            console.error('Failed to send log message:', error);
+                        }
+                    }
+                } catch (error) {
+                    await logChannel.send({ embeds: [logEmbedError] });
+                    console.error('Error fetching or updating leaderboard:', error);
+                    //await interaction.followUp('An error occurred while updating the leaderboard.');
+                }
+        
         
 
-        async function logEmbeds(logChannel) {
+        async function logEmbed(logChannel) {
             let fieldCount = 1;
             let currentEmbed = new EmbedBuilder()
                 .setColor('Random')
@@ -398,10 +465,10 @@ module.exports = {
             }
     
             if (logChannel instanceof TextChannel) {
-                await logEmbeds(logChannel);
+                await logEmbed(logChannel);
             } else {
+                await logChannel.send({ embeds: [logEmbedError] });
                 console.error('Invalid log channel or log channel is not a text channel.');
-                await logChannel.send({ embeds: [logEmbed] });
             }
        // }
 
