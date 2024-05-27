@@ -15,6 +15,7 @@ that info in a clean list */
             // not necessarily between each different tier
 // take users off ranks/afk tier
 // comp ping
+// command to see recent rank changes
    const mongoose = require('mongoose');
    const seedDatabase = require('../databaseSeeder'); 
    // MongoDB connection
