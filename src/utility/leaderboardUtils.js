@@ -39,6 +39,7 @@ async function getLeaderboardMessage() {
 module.exports = { getLeaderboardMessage };**/
 
 
+//const { AllowedMentionsTypes } = require('discord.js');
 const { MongoClient } = require('mongodb');
 require('dotenv').config();
 const mongoURI = process.env.MONGODB_URI;
@@ -76,7 +77,7 @@ async function getLeaderboardMessage() {
 // Construct the leaderboard message parts based on sorted ranks
 for (const rank in groupedUsers) {
     
-    let rankSection = `<@&${rank}>:\n `;
+    let rankSection = `<@&${rank}>:\n`;
     rankSection += groupedUsers[rank].map(userId => `<@${userId}>`).join(', ');
     rankSection += '\n\n';
 

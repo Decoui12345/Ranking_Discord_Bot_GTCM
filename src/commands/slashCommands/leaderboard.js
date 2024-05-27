@@ -32,7 +32,7 @@ module.exports = {
             let messagesSent = false; // Flag to track whether messages have been sent
             const messageParts = await getLeaderboardMessage();
             for (const part of messageParts) {
-                await interaction.channel.send({ content: part , allowed_mentions: { parse: [] } });
+                await interaction.channel.send({ content: part, allowedMentions: { users: [], roles: [] } });
             }
 
             // Once all parts of the message have been sent, set the flag to true
