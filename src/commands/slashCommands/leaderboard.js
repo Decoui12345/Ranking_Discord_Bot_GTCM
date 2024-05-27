@@ -27,6 +27,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers),
     async execute(interaction) {
         await interaction.deferReply();
+        console.log(`User: ${interaction.user.tag} executed the command: /leaderboard.`);
         
         try {
             let messagesSent = false; // Flag to track whether messages have been sent

@@ -83,7 +83,7 @@ module.exports = {
         .setColor('Red')
         .setTimestamp(); 
         
-        console.log(`Ranker: ${interaction.user.tag} executed the command.`);
+        console.log(`Ranker: ${interaction.user.tag} executed the command: /update-ranks.`);
         
         const users = [];
         const errors = [];

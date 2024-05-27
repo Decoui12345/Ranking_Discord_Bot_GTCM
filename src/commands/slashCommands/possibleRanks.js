@@ -6,6 +6,7 @@ module.exports = {
     .setDescription('Displays a list of all the tiers you can be in.'),
 
     async execute(interaction) {
+        console.log(`User: ${interaction.user.tag} executed the command: /possible-ranks.`);
         const roleID = [
             '1143694702042947614', // diamond
             '1143697130511409193', // plat

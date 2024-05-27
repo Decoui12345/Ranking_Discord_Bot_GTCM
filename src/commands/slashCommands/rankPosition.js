@@ -20,7 +20,7 @@ module.exports = {
 
     async execute(interaction) {
         const user = interaction.options.getMember('user');   
-
+        console.log(`User: ${interaction.user.tag} executed the command: /what-rank-is.`);
         const ranks = [ 
             '1143694702042947614', // diamond
             '1143697130511409193', // plat
