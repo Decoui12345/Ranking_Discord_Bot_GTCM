@@ -209,7 +209,7 @@ module.exports = {
                 }
                 
                 await shiftUserPositionsWithinRank(rank, currentPosition, position, shiftDirection);
-                await updateUserPositionInRank(user.id, rank, position);
+                await updateUserPositionInRank(user.id, rank, position, currentPosition);
             }
         }
         /**
@@ -274,7 +274,7 @@ module.exports = {
                             rankChanges.push({
                                 userId: user.id,
                                 username: user.user.tag,
-                                role: `<@&${newRoleId}>`,
+                                role: newRoleId,
                                 timestamp: new Date()
                             });
                 
@@ -510,17 +510,25 @@ async function shiftUserPositionsWithinRank(rank, currentPosition, newPosition, 
     }
 }
 
-async function updateUserPositionInRank(userId, rank, newPosition) {
-    const mongoURI = process.env.MONGODB_URI;
-    const client = new MongoClient(mongoURI);
-
+async function updateUserPositionInRank(userId, rank, newPosition, oldPosition) {
+    const client = new MongoClient(uri);
     try {
         await client.connect();
-        const db = client.db('rankPosition');
+        const db = client.db(dbName);
+
         await db.collection('users').updateOne(
             { userId, rank },
             { $set: { position: newPosition } }
         );
+
+        await db.collection(collectionName).insertOne({
+            userId,
+            rank: rank,
+            oldPosition: oldPosition,
+            newPosition: newPosition,
+            direction: newPosition < oldPosition ? 'up' : 'down',
+            timestamp: new Date()
+        });
     } finally {
         await client.close();
     }
@@ -579,6 +587,17 @@ async function moveUserToNewRank(userId, currentRank, currentPosition, newRank, 
             { $set: { rank: newRank, position: newPosition } },
             { upsert: true }
         );
+
+        // Log the rank change
+        // await db.collection(collectionName).insertOne({
+         //   userId,
+        //    oldRank: currentRank,
+        //    newRank: newRank,
+        //    oldPosition: currentPosition,
+        //    newPosition: newPosition,
+        //    direction: newPosition < currentPosition ? 'up' : 'down',
+        //    timestamp: new Date()
+        //});
     } finally {
         await client.close();
     }
