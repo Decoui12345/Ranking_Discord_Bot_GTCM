@@ -510,7 +510,7 @@ async function shiftUserPositionsWithinRank(rank, currentPosition, newPosition, 
     }
 }
 
-async function updateUserPositionInRank(userId, rank, newPosition, oldPosition) {
+async function updateUserPositionInRank(userId, user, rank, newPosition, oldPosition) {
     const client = new MongoClient(uri);
     try {
         await client.connect();
@@ -523,6 +523,7 @@ async function updateUserPositionInRank(userId, rank, newPosition, oldPosition) 
 
         await db.collection(collectionName).insertOne({
             userId,
+            username: user.username,
             rank: rank,
             oldPosition: oldPosition,
             newPosition: newPosition,
