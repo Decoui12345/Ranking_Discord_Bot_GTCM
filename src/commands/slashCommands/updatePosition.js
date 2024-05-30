@@ -3,7 +3,7 @@ const { MongoClient } = require('mongodb');
 const { getLeaderboardMessage } = require('../../utility/leaderboardUtils');
 require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
-const leaderboardMessageIds = ['1244797095819608145', '1244797097337684008'];
+const leaderboardMessageIds = ['1245583949758201876', '1245583951066697891'];
 
 const logChannelId = '1144074199716073492';
 // const diamondTierGamer = '1143694702042947614';
