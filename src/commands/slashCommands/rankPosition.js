@@ -190,7 +190,7 @@ module.exports = {
             );
 
         let currentPage = 0;
-        const message = await interaction.reply({ embeds: [pages[currentPage]], components: [row], fetchReply: true });
+        const message = await interaction.reply({ embeds: [pages[currentPage]], components: [row], fetchReply: true, ephemeral: true });
 
         const collector = message.createMessageComponentCollector({ time: 60000 });
 
