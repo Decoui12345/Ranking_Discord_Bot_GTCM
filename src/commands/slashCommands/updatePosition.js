@@ -3,7 +3,7 @@ const { MongoClient } = require('mongodb');
 const { getLeaderboardMessage } = require('../../utility/leaderboardUtils');
 require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
-const leaderboardMessageIds = ['1245583949758201876', '1245583951066697891'];
+const leaderboardMessageIds = ['1246220886995107913', '1246220888206999653'];
 
 const logChannelId = '1144074199716073492';
 // const diamondTierGamer = '1143694702042947614';
@@ -209,7 +209,7 @@ module.exports = {
                 }
                 
                 await shiftUserPositionsWithinRank(rank, currentPosition, position, shiftDirection);
-                await updateUserPositionInRank(user.id, rank, position, currentPosition);
+                await updateUserPositionInRank(user.id, user.user.tag, rank, position, currentPosition);
             }
         }
         /**
@@ -379,7 +379,7 @@ module.exports = {
                     await interaction.editReply({ content: 'No changes were made. Users are in the position you wanted them to be at. If this is a mistake please try again.', ephemeral: true });
                 }
         // Updating the leaderboard message(s)
-        
+        try{ 
                 const leaderboardChannel = interaction.client.channels.cache.get(leaderboardChannelId);
                 if (!leaderboardChannel) {
                     console.error('Invalid leaderboard channel or not a text channel.');
@@ -408,7 +408,7 @@ module.exports = {
                             leaderboardMessageIds.splice(i, 1);
                         }
                     }
-        
+                    
                     //await interaction.followUp('Leaderboard updated successfully.');
                     //const logChannel = await interaction.client.channels.fetch(logChannelId);
                     // Log the update
@@ -431,12 +431,24 @@ module.exports = {
                     console.error('Error fetching or updating leaderboard:', error);
                     //await interaction.followUp('An error occurred while updating the leaderboard.');
                 }
-        
-        
-
-        async function logEmbed(logChannel) {
-            let fieldCount = 1;
-            let currentEmbed = new EmbedBuilder()
+            } catch (error) {
+                // Handle the error
+                if (error.code === 10008) {
+                    console.error('Message not found:', error.message);
+                    // Notify the user or log the error
+                    await interaction.followUp('The message could not be found. It may have been deleted.');
+                } else {
+                    // Handle other errors
+                    console.error('Error editing message:', error);
+                    await interaction.followUp('An error occurred while trying to update the message.');
+                }
+            }
+                
+                
+                
+                async function logEmbed(logChannel) {
+                    let fieldCount = 1;
+                    let currentEmbed = new EmbedBuilder()
                 .setColor('Random')
                 .addFields({ name: 'Ranker that executed the command:', value: `${interaction.user}` })
                 .setTimestamp()
@@ -509,24 +521,27 @@ async function shiftUserPositionsWithinRank(rank, currentPosition, newPosition, 
         await client.close();
     }
 }
-
-async function updateUserPositionInRank(userId, user, rank, newPosition, oldPosition) {
+//
+async function updateUserPositionInRank(userId, username, rank, newPosition, oldPosition) {
     const client = new MongoClient(uri);
     try {
         await client.connect();
         const db = client.db(dbName);
 
+        const user = await db.collection('users').findOne({ userId });
+        console.log(`In function: User: ${username}, oldPosition: ${oldPosition}`);
+
         await db.collection('users').updateOne(
             { userId, rank },
-            { $set: { position: newPosition } }
+            { $set: { username: user.username, position: newPosition } }
         );
 
         await db.collection(collectionName).insertOne({
             userId,
-            username: user.username,
-            rank: rank,
-            oldPosition: oldPosition,
-            newPosition: newPosition,
+            username,
+            rank,
+            oldPosition,
+            newPosition,
             direction: newPosition < oldPosition ? 'up' : 'down',
             timestamp: new Date()
         });
@@ -535,7 +550,8 @@ async function updateUserPositionInRank(userId, user, rank, newPosition, oldPosi
     }
 }
 
-async function insertUserRankAndPosition(userId, rank, position) {
+
+async function insertUserRankAndPosition(userId, username, rank, position) {
     const mongoURI = process.env.MONGODB_URI;
     const client = new MongoClient(mongoURI);
 
@@ -551,6 +567,7 @@ async function insertUserRankAndPosition(userId, rank, position) {
 
         await db.collection('users').insertOne({
             userId,
+            username,//
             rank,
             position
         });
@@ -566,39 +583,53 @@ async function moveUserToNewRank(userId, currentRank, currentPosition, newRank, 
     try {
         await client.connect();
         const db = client.db('rankPosition');
+        const usersCollection = db.collection('users');
+
+        // Retrieve the user document before deleting it
+        const user = await usersCollection.findOne({ userId, rank: currentRank });
+        if (!user) {
+            throw new Error('User not found in the current rank');
+        }
 
         // Remove the user from the current rank
-        await db.collection('users').deleteOne({ userId, rank: currentRank });
+        await usersCollection.deleteOne({ userId, rank: currentRank });
 
         // Shift positions of users in the old rank
-        await db.collection('users').updateMany(
+        await usersCollection.updateMany(
             { rank: currentRank, position: { $gt: currentPosition } },
             { $inc: { position: -1 } }
         );
 
         // Shift positions of users in the new rank
-        await db.collection('users').updateMany(
+        await usersCollection.updateMany(
             { rank: newRank, position: { $gte: newPosition } },
             { $inc: { position: 1 } }
         );
 
-        // Insert the user into the new rank
-        await db.collection('users').updateOne(
+        // Insert the user into the new rank, retaining all fields
+        await usersCollection.updateOne(
             { userId },
-            { $set: { rank: newRank, position: newPosition } },
+            { 
+                $set: { 
+                    username: user.username, // Ensure username and other fields are retained
+                    rank: newRank, 
+                    position: newPosition,
+                    // Copy other fields from user document as needed
+                }
+            },
             { upsert: true }
         );
 
-        // Log the rank change
-        // await db.collection(collectionName).insertOne({
-         //   userId,
-        //    oldRank: currentRank,
-        //    newRank: newRank,
-        //    oldPosition: currentPosition,
-        //    newPosition: newPosition,
-        //    direction: newPosition < currentPosition ? 'up' : 'down',
-        //    timestamp: new Date()
-        //});
+        // Optionally, log the rank change
+        // await db.collection('rankChanges').insertOne({
+        //     userId,
+        //     oldRank: currentRank,
+        //     newRank: newRank,
+        //     oldPosition: currentPosition,
+        //     newPosition: newPosition,
+        //     direction: newPosition < currentPosition ? 'up' : 'down',
+        //     timestamp: new Date()
+        // });
     } finally {
         await client.close();
     }
