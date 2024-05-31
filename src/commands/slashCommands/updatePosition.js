@@ -3,7 +3,7 @@ const { MongoClient } = require('mongodb');
 const { getLeaderboardMessage } = require('../../utility/leaderboardUtils');
 require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
-const leaderboardMessageIds = ['1246225125477711872', '1246225126555648030'];
+const leaderboardMessageIds = ['1246244997888741388', '1246244999637631057'];
 
 const logChannelId = '1144074199716073492';
 // const diamondTierGamer = '1143694702042947614';
@@ -179,12 +179,17 @@ module.exports = {
         const rankChanges = [];
         const rankUpdates = [];
         const positionChanges = [];
-        
+
+        //console.log('Users array:', users);
+
         for (const { user, rank, position } of users) {
             const currentPositionData = await getCurrentPositionFromDatabase(user.id);
+            //console.log('Processing user:', user);
             
             if (!currentPositionData) {
-                await insertUserRankAndPosition(user.id, rank, position);
+                const username = user.user.username;
+                //console.log(`Inserting user ${user.id} with username ${user.username}`);
+                await insertUserRankAndPosition(user.id, username, rank, position);
                 rankUpdates.push({ user, newRank: rank });
                 continue;
             }
@@ -565,12 +570,16 @@ async function insertUserRankAndPosition(userId, username, rank, position) {
             { $inc: { position: 1 } }
         );
 
+        // Insert the new user with rank and position
         await db.collection('users').insertOne({
             userId,
-            username,//
+            username,
             rank,
             position
         });
+
+    } catch (error) {
+        console.error('Error inserting user rank and position:', error);
     } finally {
         await client.close();
     }
