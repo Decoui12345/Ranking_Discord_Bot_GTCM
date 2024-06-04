@@ -1,21 +1,25 @@
 // ✅(Created SC) What ranks are there?
-// Who is in ... tier?
+// ✅(Created SC) Who is in ... tier?
 // ✅(Created SC)Let me rank ... into ... tier
 // ✅(Created SC)When setting the rank of someone that updates their role
 /* When asking for the rank of someone specific or the whole tier
 group you ask for that role's list of members and it should output 
 that info in a clean list */
-// Create some sort of audit log either a new message/embed or in the actual audit log itself
-// ✅(Created SC)Automatically takes away unranked role or any other tier role if there is a change to their roles testing testing
+// ✅(Created log embed) Create some sort of audit log either a new message/embed or in the actual audit log itself
+// ✅(Created SC) Automatically takes away unranked role or any other tier role if there is a change to their roles testing testing
 // Maybe the ability for people to complain about certain ranks, etc
-// have a channel dedicated to displaying current ranks 
-// ✅(Created SC)add history to rankPosition
+// ✅(Created SC) have a channel dedicated to displaying current ranks 
+// ✅(Created SC) add history to rankPosition
 // rank comparison
-// more in-depth rank history for rankPosition EX: a second page that someone could look at to see all the tiny changes in their ranks
+// ✅(Created SC) more in-depth rank history for rankPosition EX: a second page that someone could look at to see all the tiny changes in their ranks
             // not necessarily between each different tier
 // take users off ranks/afk tier
 // comp ping
 // command to see recent rank changes
+// ✅(Created SC) command that will have the bot send the code to early access and to event announcements, maybe with a little bit of a delay too
+// automatic event reminders
+// command that watchers can use to give feedback, it will create a thread there and then send an embed to the rankers channel with the opinion and a link to the thread
+
    const mongoose = require('mongoose');
    const seedDatabase = require('../databaseSeeder'); 
    // MongoDB connection
