@@ -14,6 +14,7 @@ module.exports = {
 
 
         async execute(interaction) {
+            console.log(`User: ${interaction.user.tag} executed the command: /event-reminder-start.`);
             const eventPingRoleId = '1156687290895179797';
        // Function to schedule a task
        const scheduleTask = (time, days) => {

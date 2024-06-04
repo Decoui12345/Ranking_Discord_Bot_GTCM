@@ -17,6 +17,7 @@ module.exports = {
         .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles),
 
     async execute(interaction) {
+        console.log(`User: ${interaction.user.tag} executed the command: /event-code.`);
         const eventCode = interaction.options.getString('code').toUpperCase(); // Convert code to uppercase
         const unrankedRoleId = '1143970454382596096';
         const eventPingRoleId = '1156687290895179797';

@@ -11,6 +11,7 @@ module.exports = {
 
 
         async execute(interaction) {
+            console.log(`User: ${interaction.user.tag} executed the command: /event-reminder-stop.`);
             if (global.reminderTasks) {
                 global.reminderTasks.forEach(task => task.stop());
                 global.reminderTasks = null;
