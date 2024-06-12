@@ -19,7 +19,7 @@ that info in a clean list */
 // ✅(Created SC) command that will have the bot send the code to early access and to event announcements, maybe with a little bit of a delay too
 // automatic event reminders
 // command that watchers can use to give feedback, it will create a thread there and then send an embed to the rankers channel with the opinion and a link to the thread
-
+// command for regular people to see the event status
    const mongoose = require('mongoose');
    const seedDatabase = require('../databaseSeeder'); 
    // MongoDB connection
