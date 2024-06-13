@@ -173,6 +173,7 @@ module.exports = {
 
 const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const cron = require('node-cron');
+// const moment = require('moment-timezone');
 
 // Replace with your actual IDs
 const RANKERS_CHANNEL_ID = '1135037357754695761';
@@ -238,10 +239,10 @@ module.exports = {
                             } else {
                                 await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
                             }
-                        }, reminderTime * 2700000);
+                        }, reminderTime * 60000);
 
                         const filter = i => i.customId === 'event_yes' || i.customId === 'event_no';
-                        const collector = questionMessage.createMessageComponentCollector({ filter, time: 2700000 });
+                        const collector = questionMessage.createMessageComponentCollector({ filter, time: reminderTime * 60000 });
 
                         let responseReceived = false;
 
@@ -280,6 +281,9 @@ module.exports = {
                     } catch (error) {
                         console.error('Failed to send question message or create collector:', error);
                     }
+                }, {
+                    scheduled: true,
+                    timezone: 'America/New_York'
                 });
 
                 // Store the task in the global reminderTasks array
