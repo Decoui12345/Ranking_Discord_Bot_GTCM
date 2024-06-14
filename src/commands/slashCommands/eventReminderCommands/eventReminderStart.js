@@ -268,7 +268,7 @@ module.exports = {
 
                         const questionMessage = await rankersChannel.send({
                             // <@&${RANKER_PING_ROLE_ID}>
-                            content: `ranker, are you able to host the event in 1 hour and 30 minutes?`,
+                            content: `<@&${RANKER_PING_ROLE_ID}>, are you able to host the event in 1 hour and 30 minutes?`,
                             components: [row]
                         });
 
