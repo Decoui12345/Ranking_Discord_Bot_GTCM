@@ -204,7 +204,7 @@ module.exports = {
             await i.update({ embeds: [pages[currentPage]], components: [row] });
         });
 
-        collector.on('end', collected => {
+        collector.on('end', async () => {
             const disabledRow = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
