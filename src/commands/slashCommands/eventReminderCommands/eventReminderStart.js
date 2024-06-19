@@ -315,6 +315,8 @@ module.exports = {
                             if (!responseReceived) {
                                     await questionMessage.edit({ content: `No responses received. No reminder has been sent.`, components: [] });
 
+                                    await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
+
                                     await collection.updateOne(
                                         {}, 
                                         { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `No one responded. No available rankers.` } }
