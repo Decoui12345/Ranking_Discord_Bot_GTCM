@@ -288,28 +288,53 @@ module.exports = {
 
                         collector.on('collect', async i => {
                             console.log('Collector received a response.');
-                            responseReceived = true;
+                        
+                            if (responseReceived) {
+                                // If a response has already been received, ignore further interactions
+                                await i.deferUpdate();
+                                return;
+                            }
+                        
+                            responseReceived = true; // Set the flag to true indicating a response has been received
+                        
                             if (i.customId === 'event_yes') {
-                            
-                                    yesResponder.push(i.user.username);
-                                    // await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour and 30 minutes`);
-                                    await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
-
-                                    await collection.updateOne(
-                                        {}, 
-                                        { $set: { status: `The next event is scheduled and will start on time. `, ranker: `${i.user.username}` } } /* Ranker doing the event will be: ${i.user.username} */
-                                    );
-
+                                yesResponder.push(i.user.username);
+                                await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
+                        
+                                await collection.updateOne(
+                                    {}, 
+                                    { $set: { status: `The next event is scheduled and will start on time. `, ranker: `${i.user.username}` } }
+                                );
+                        
                             } else if (i.customId === 'event_no') {
                                 noResponders.push(i.user.username);
+                                await i.deferUpdate();
+                        
                                 await collection.updateOne(
                                     {}, 
                                     { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
                                 );
-
-                                await i.deferUpdate();
+                        
+                                // Disable only the "No" button for the user who clicked it
+                                const disabledRow = new ActionRowBuilder()
+                                    .addComponents(
+                                        new ButtonBuilder()
+                                            .setCustomId('event_yes')
+                                            .setLabel('Yes')
+                                            .setStyle(ButtonStyle.Success),
+                                        new ButtonBuilder()
+                                            .setCustomId('event_no')
+                                            .setLabel('No')
+                                            .setStyle(ButtonStyle.Danger)
+                                            .setDisabled(true) // Disable the "No" button for this user
+                                    );
+                        
+                                questionMessage.edit({
+                                    components: [disabledRow]
+                                });
                             }
                         });
+                        
 
                         collector.on('end', async () => {
                             if (!responseReceived) {
