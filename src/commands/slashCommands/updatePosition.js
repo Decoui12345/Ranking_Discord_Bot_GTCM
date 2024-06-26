@@ -3,9 +3,10 @@ const { MongoClient } = require('mongodb');
 const { getLeaderboardMessage } = require('../../utility/leaderboardUtils');
 require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
-const leaderboardMessageIds = ['1246244997888741388', '1246244999637631057'];
+const leaderboardMessageIds = ['1255324744782450698', '1255324746053058631'];
 
 const logChannelId = '1144074199716073492';
+const eventResultsChannelId = '1155601127128182826';
 // const diamondTierGamer = '1143694702042947614';
 // const platinumTierGamer = '1143698998872514560';
 // const goldTierGamer = '1143697130511409193';
@@ -74,8 +75,9 @@ module.exports = {
     })(),
     async execute(interaction) {
         
-        await interaction.deferReply();
+        await interaction.deferReply({ ephemeral: true });
         const logChannel = await interaction.client.channels.fetch(logChannelId);
+        const eventResultsChannel = await interaction.client.channels.fetch(eventResultsChannelId);
         // Log the update
         const logEmbedError = new EmbedBuilder()
         .setTitle('🛑Leaderboard Failed to update')
@@ -379,7 +381,8 @@ module.exports = {
                 }
                 
                 if (embedsToSend.length > 0) {
-                    await interaction.editReply({ embeds: embedsToSend });
+                    await interaction.editReply({ content: 'Updated ranks are being sent to the event results channel.', ephemeral: true });
+                    await eventResultsChannel.send({ embeds: embedsToSend });
                 } else {
                     await interaction.editReply({ content: 'No changes were made. Users are in the position you wanted them to be at. If this is a mistake please try again.', ephemeral: true });
                 }
