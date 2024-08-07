@@ -26,7 +26,8 @@ const rankRoles = {
     silverTierGamer:  '1143702378244219050',
     ironTierGamer:  '1143704641398386718',
     copperTierGamer:  '1201228978183221439',
-    unranked:  '1143970454382596096'
+    unranked:  '1143970454382596096',
+    afk: '1270503932652814446'
 };
 
 const RANK_CHOICES = [
@@ -36,6 +37,8 @@ const RANK_CHOICES = [
     { name: 'Silver', value: rankRoles.silverTierGamer },
     { name: 'Iron', value: rankRoles.ironTierGamer },
     { name: 'Copper', value: rankRoles.copperTierGamer },
+    { name: 'AFK from events', value: rankRoles.afk },
+
     // { name: 'unranked', value: rankRoles.unranked },
 ];
 
@@ -644,5 +647,13 @@ async function moveUserToNewRank(userId, currentRank, currentPosition, newRank, 
         // });
     } finally {
         await client.close();
+    }
+
+    async function afkRemove() {
+        try {
+            
+        } catch (error) {
+            console.log(`Error putting player to afk.`, error);
+        }
     }
 }}};
