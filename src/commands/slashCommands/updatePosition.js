@@ -649,11 +649,27 @@ async function moveUserToNewRank(userId, currentRank, currentPosition, newRank, 
         await client.close();
     }
 
-    async function afkRemove() {
-        try {
+
+}
+async function afkRemove() {
+    const mongoURI = process.env.MONGODB_URI;
+    const client = new MongoClient(mongoURI);
+
+    try {
+        await client.connect();
+        const db = client.db('rankPosition');
+        const usersCollection = db.collection('users');
+
+        // Remove existing rank role from the user (updating promotion/demotion statements to include afk removal in the updates embed)
+            // Add afk role to them
+        
             
-        } catch (error) {
-            console.log(`Error putting player to afk.`, error);
-        }
+        // Remove them from the leaderboard
+            // Move everyone else up accordingly
+            
+    } finally {
+        await client.close();
     }
-}}};
+}
+
+}};
