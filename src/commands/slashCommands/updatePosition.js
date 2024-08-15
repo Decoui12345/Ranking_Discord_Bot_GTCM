@@ -3,7 +3,7 @@ const { MongoClient } = require('mongodb');
 const { getLeaderboardMessage } = require('../../utility/leaderboardUtils');
 require('dotenv').config();
 const leaderboardChannelId = process.env.LEADERBOARD_CHANNEL_ID;
-const leaderboardMessageIds = ['1260805793708511263', '1260805794518007850', '1262615231360663623'];
+const leaderboardMessageIds = ['1273391176787034122', '1273391178011643975', '1273391178762686549'];
 
 const logChannelId = '1144074199716073492';
 const eventResultsChannelId = '1155601127128182826';
@@ -26,7 +26,8 @@ const rankRoles = {
     silverTierGamer:  '1143702378244219050',
     ironTierGamer:  '1143704641398386718',
     copperTierGamer:  '1201228978183221439',
-    unranked:  '1143970454382596096'
+    unranked:  '1143970454382596096',
+    afk: '1270503932652814446'
 };
 
 const RANK_CHOICES = [
@@ -36,6 +37,8 @@ const RANK_CHOICES = [
     { name: 'Silver', value: rankRoles.silverTierGamer },
     { name: 'Iron', value: rankRoles.ironTierGamer },
     { name: 'Copper', value: rankRoles.copperTierGamer },
+    { name: 'AFK from events', value: rankRoles.afk },
+
     // { name: 'unranked', value: rankRoles.unranked },
 ];
 
@@ -171,10 +174,16 @@ module.exports = {
             .setTimestamp();
 
         const unrankedPlayersE = new EmbedBuilder()
-        .setTitle('🎉 New ranked players!!! 🎉')
-        .setColor('Green')
-        .setTimestamp();
+            .setTitle('🎉 New ranked players!!! 🎉')
+            .setColor('Green')
+            .setTimestamp();
+
+        const afkPlayersE = new EmbedBuilder()
+            .setTitle('AFK:')
+            .setColor('Grey')
+            .setTimestamp();
         
+        const afkPlayers = [];
         const unrankedPlayers = [];
         const promotedPlayers = [];
         const demotedPlayers = [];
@@ -266,11 +275,14 @@ module.exports = {
                 
                                 // Determine if this is a promotion or demotion
                                 //if (rank === newRoleId) {
-                                    if (rank > newRoleId) {
+                                    if (newRank === rankRoles.afk) {
+                                        afkPlayers.push({ user, role: newRoleId }); 
+                                    } else if (rank > newRoleId) {
                                         promotedPlayers.push({ user, role: newRoleId });
                                     } else {
                                         demotedPlayers.push({ user, role: newRoleId });
                                     }
+                                
                                 //}
                             }
                         }
@@ -327,9 +339,10 @@ module.exports = {
                 console.error('Failed to close MongoDB connection:', error);
             }
         }
-        const promotionMessages = [];
+            const promotionMessages = [];
             const demotionMessages = [];
             //const positionChangeMessages = [];
+            // const afkMessages = [];
 
             if (promotedPlayers.length > 0) {
                 for (const { user, role } of promotedPlayers) {
@@ -342,6 +355,12 @@ module.exports = {
                     demotionMessages.push(`- ${user} was moved down to <@&${role}> tier`);
                 }
             }
+
+           /*  if (afkPlayers.length > 0) {
+                for (const { user, role } of afkPlayers) {
+                    afkMessages.push(`- ${user} was moved to <@&${role}> tier`);
+                }
+            } */
 
             if (positionChanges.length > 0) {
                 for (const { user, direction, newRank } of positionChanges) {
@@ -367,6 +386,10 @@ module.exports = {
                 unrankedPlayersE.addFields({ name: 'Newly Ranked players:', value: unRankedPlayerMessage });
             }
 
+            if (afkPlayers.length > 0) {
+                const afkPlayerMessage = afkPlayers.map(({ user, role }) => `- ${user} was moved to <@&${role}>`).join('\n');
+                afkPlayersE.addFields({ name: `Hasn't gone to an event in a while:`, value: afkPlayerMessage });
+            }
             // Log for debugging purposes
     //console.log('Promotion Messages:', promotionMessages);
     //console.log('Demotion Messages:', demotionMessages);
@@ -378,6 +401,9 @@ module.exports = {
                 }
                 if (unrankedPlayers.length > 0) {
                     embedsToSend.push(unrankedPlayersE);
+                }
+                if (afkPlayers.length > 0) {
+                    embedsToSend.push(afkPlayersE);
                 }
                 
                 if (embedsToSend.length > 0) {
@@ -645,4 +671,49 @@ async function moveUserToNewRank(userId, currentRank, currentPosition, newRank, 
     } finally {
         await client.close();
     }
-}}};
+
+
+}
+async function afkRemove(userId, currentRank, currentPosition) {
+    const mongoURI = process.env.MONGODB_URI;
+    const client = new MongoClient(mongoURI);
+
+    try {
+        await client.connect();
+        const db = client.db('rankPosition');
+        const usersCollection = db.collection('users');
+
+        const user = await usersCollection.findOne({ userId, rank: currentRank });
+        if (!user) {
+            throw new Error('User not found in the current rank');
+        }
+        // Remove existing rank role from the user (updating promotion/demotion statements to include afk removal in the updates embed)
+            // Add afk role to them
+
+            
+        // Remove them from the leaderboard
+        await usersCollection.updateOne(
+            { userId },
+            { 
+                $set: { 
+                    username: user.username, // Ensure username and other fields are retained
+                    rank: newRank, 
+                    position: null,
+                }
+            },
+            { upsert: true }
+        )
+            // Move everyone else up accordingly
+            // Everyone below said person in the given rank will be moved up 1 to fill in that position
+            await usersCollection.updateMany(
+                { rank: currentRank, position: { $lt: currentPosition } },
+                { $inc: { position: 1 } }
+            )
+
+            
+    } finally {
+        await client.close();
+    }
+}
+
+}};
