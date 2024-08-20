@@ -1,6 +1,11 @@
 // fix the limiter for the button collector so it only accepts 1 response from each ranker
 
-
+//IDEA:
+        // After clicking yes, it edits the button so it will follow up with a
+        // confirmation to make sure they mean yes, then it will update the 
+        // database for the /event-status command as well as if they don't press 
+        // "yes" on the confirmation then it doesn't do anything and will
+        // still let the other rankers edit their availability 
 
 
 
@@ -79,6 +84,18 @@ module.exports = {
                         .setLabel('No')
                         .setStyle(ButtonStyle.Danger)
                 );
+            
+            const confirmation_row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('confirm_yes')
+                        .setLabel('Yes, I confirm.')
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId('confirm_no')
+                        .setLabel(`No, I can't do the event.`)
+                        .setStyle(ButtonStyle.Danger)
+                );
 
             // Initialize global reminderTasks array if not already initialized
             if (!global.reminderTasks) {
@@ -131,6 +148,8 @@ module.exports = {
                             responseReceived = true; // Set the flag to true indicating a response has been received
                         
                             if (i.customId === 'event_yes') {
+
+
                                 yesResponder.push(i.user.username);
                                 await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
                         
