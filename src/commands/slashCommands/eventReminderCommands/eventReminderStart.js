@@ -16,10 +16,14 @@ require('dotenv').config();
 // const moment = require('moment-timezone');
 
 // Replace with your actual IDs
-const RANKERS_CHANNEL_ID = '1135037357754695761';
+/* const RANKERS_CHANNEL_ID = '1135037357754695761';
 const ANNOUNCEMENTS_CHANNEL_ID = '1166953869293654146';
 const EVENT_PING_ROLE_ID = '1156687290895179797';
-const RANKER_PING_ROLE_ID = '1134266246456680569';
+const RANKER_PING_ROLE_ID = '1134266246456680569'; */
+const RANKERS_CHANNEL_ID = '1244081913522688010'; // bot testing
+const ANNOUNCEMENTS_CHANNEL_ID = '1244081913522688010'; // bot testing
+const EVENT_PING_ROLE_ID = '1222257217227591780'; // wood
+const RANKER_PING_ROLE_ID = '1215381867466072204'; // programmer
 
 const uri = process.env.MONGODB_URI;
 const dbName = 'events';
@@ -129,7 +133,7 @@ module.exports = {
                             } else {
                                 await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
                             }
-                        }, reminderTime * 60000);
+                        }, reminderTime * 60000); // maybe 1 min
 
                         const filter = i => i.customId === 'event_yes' || i.customId === 'event_no';
                         const collector = questionMessage.createMessageComponentCollector({ filter, time: reminderTime * 60000 });
@@ -148,10 +152,12 @@ module.exports = {
                             responseReceived = true; // Set the flag to true indicating a response has been received
                         
                             if (i.customId === 'event_yes') {
-
-
-                                yesResponder.push(i.user.username);
-                                await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
+                                await i.update({ content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", components: [confirmation_row] });
+                                if (i.customId === 'confirm_yes') {
+                                    yesResponder.push(i.user.username);
+                                    await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
+                                }
+                                //yesResponder.push(i.user.username);
                         
                                 await collection.updateOne(
                                     {}, 
@@ -186,6 +192,9 @@ module.exports = {
                                 });
                             }
                         });
+
+
+                        
                         
 
                         collector.on('end', async () => {
@@ -221,9 +230,9 @@ module.exports = {
             };
 
             // Schedule reminders
-            scheduleReminder('45 14 * * 1,3,5', 45); // 3:30 PM on Monday, Wednesday, and Friday
-            scheduleReminder('15 17 * * 1,3,5', 45);  // 6:00 PM on Monday, Wednesday, and Friday
-            scheduleReminder('45 19 * * 1,3,5', 45); // 8:30 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('41 22 * * 1,3,5', 45); // 3:30 PM on Monday, Wednesday, and Friday
+            scheduleReminder('45 22 * * 1,3,5', 45);  // 6:00 PM on Monday, Wednesday, and Friday
+            scheduleReminder('49 22 * * 1,3,5', 45); // 8:30 PM on Monday, Wednesday, and Friday 
 
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
