@@ -1,3 +1,9 @@
+// fix the limiter for the button collector so it only accepts 1 response from each ranker
+
+
+
+
+
 const { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const cron = require('node-cron');
 const { MongoClient } = require('mongodb');
