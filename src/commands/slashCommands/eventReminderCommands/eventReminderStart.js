@@ -137,84 +137,83 @@ module.exports = {
 
                         const filter = i => i.customId === 'event_yes' || i.customId === 'event_no';
                         const collector = questionMessage.createMessageComponentCollector({ filter, time: reminderTime * 60000 });
-
-                        let responseReceived = false;
-
+                        
+                        
                         collector.on('collect', async i => {
                             console.log('Collector received a response.');
-                        
-                            if (responseReceived) {
-                                // If a response has already been received, ignore further interactions
-                                await i.deferUpdate();
-                                return;
-                            }
-                        
-                            responseReceived = true; // Set the flag to true indicating a response has been received
-                        
+                            
                             if (i.customId === 'event_yes') {
                                 await i.update({ content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", components: [confirmation_row] });
-                                if (i.customId === 'confirm_yes') {
-                                    yesResponder.push(i.user.username);
-                                    await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
-                                }
-                                //yesResponder.push(i.user.username);
-                        
-                                await collection.updateOne(
-                                    {}, 
-                                    { $set: { status: `The next event is scheduled and will start on time. `, ranker: `${i.user.username}` } }
-                                );
-                        
+                                
+                                const confirmationFilter = j => j.customId === 'confirm_yes' || j.customId === 'confirm_no' && j.user.id === i.user.id;
+                                const confirmationCollector = i.message.createMessageComponentCollector({ filter: confirmationFilter, time: reminderTime * 60000 });
+                                
+                                confirmationCollector.on('collect', async j => {
+                                    if (j.customId === 'confirm_yes') {
+                                        yesResponder.push(j.user.username);
+                                        await j.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${j.user.username}`, components: [] });
+
+                                        await collection.updateOne(
+                                            {},
+                                            { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
+                                        );
+                                    } else if (j.customId === 'confirm_no') {
+                                        await j.update({ content: questionMessage.content, components: [row] });
+                                    }
+                                });
+
+                                confirmationCollector.on('end', collected => {
+                                    if (!collected.size) {
+                                        noResponders.push(i.user.username);
+                                    }
+                                });
+                                
                             } else if (i.customId === 'event_no') {
                                 noResponders.push(i.user.username);
                                 await i.deferUpdate();
+                                
+                                await collection.updateOne(
+                                    {},
+                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
+                                );
+                                
+                                const disabledRow = new ActionRowBuilder()
+                                .addComponents(
+                                    new ButtonBuilder()
+                                    .setCustomId('event_yes')
+                                    .setLabel('Yes')
+                                    .setStyle(ButtonStyle.Success),
+                                    new ButtonBuilder()
+                                    .setCustomId('event_no')
+                                    .setLabel('No')
+                                    .setStyle(ButtonStyle.Danger)
+                                    .setDisabled(true) // Disable the "No" button for this user
+                                );
+                                
+                                await questionMessage.edit({ components: [disabledRow] });
+                            }
+                        });
+
                         
+                        
+                        collector.on('end', async () => {
+                            if (noResponders.length === 0 && yesResponder.length === 0) {
+                                await questionMessage.edit({ content: `No responses received. No reminder has been sent.`, components: [] });
+                                
+                                await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
+                                
+                                await collection.updateOne(
+                                    {}, 
+                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `No one responded. No available rankers.` } }
+                                );
+                                
+                            } else if (noResponders.length > 0) {
+                                await questionMessage.edit({ content: `Responded with No: ${noResponders.join(', ')}`, components: [] });
+                                
                                 await collection.updateOne(
                                     {}, 
                                     { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
                                 );
-                        
-                                // Disable only the "No" button for the user who clicked it
-                                const disabledRow = new ActionRowBuilder()
-                                    .addComponents(
-                                        new ButtonBuilder()
-                                            .setCustomId('event_yes')
-                                            .setLabel('Yes')
-                                            .setStyle(ButtonStyle.Success),
-                                        new ButtonBuilder()
-                                            .setCustomId('event_no')
-                                            .setLabel('No')
-                                            .setStyle(ButtonStyle.Danger)
-                                            .setDisabled(true) // Disable the "No" button for this user
-                                    );
-                        
-                                questionMessage.edit({
-                                    components: [disabledRow]
-                                });
-                            }
-                        });
-
-
-                        
-                        
-
-                        collector.on('end', async () => {
-                            if (!responseReceived) {
-                                    await questionMessage.edit({ content: `No responses received. No reminder has been sent.`, components: [] });
-
-                                    await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
-
-                                    await collection.updateOne(
-                                        {}, 
-                                        { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `No one responded. No available rankers.` } }
-                                    );
-
-                            } else if (noResponders.length > 0) {
-                                    await questionMessage.edit({ content: `Responded with No: ${noResponders.join(', ')}`, components: [] });
-
-                                    await collection.updateOne(
-                                        {}, 
-                                        { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
-                                    );
                             }
                         });
                     } catch (error) {
@@ -224,16 +223,16 @@ module.exports = {
                     scheduled: true,
                     timezone: 'America/New_York'
                 });
-
+                
                 // Store the task in the global reminderTasks array
                 global.reminderTasks.push(task);
             };
-
+            
             // Schedule reminders
-            scheduleReminder('41 22 * * 1,3,5', 45); // 3:30 PM on Monday, Wednesday, and Friday
-            scheduleReminder('45 22 * * 1,3,5', 45);  // 6:00 PM on Monday, Wednesday, and Friday
-            scheduleReminder('49 22 * * 1,3,5', 45); // 8:30 PM on Monday, Wednesday, and Friday 
-
+            scheduleReminder('30 15 * * 1,3,5', 45); // 3:30 PM on Monday, Wednesday, and Friday
+            scheduleReminder('00 18 * * 1,3,5', 45);  // 6:00 PM on Monday, Wednesday, and Friday
+            scheduleReminder('30 20 * * 1,3,5', 45); // 8:30 PM on Monday, Wednesday, and Friday 
+            
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
             console.error('Failed to fetch channels or roles:', error);
@@ -243,3 +242,94 @@ module.exports = {
         } */
     },
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// let responseReceived = false;
+
+/* collector.on('collect', async i => {
+    console.log('Collector received a response.');
+
+    if (responseReceived) {
+        // If a response has already been received, ignore further interactions
+        await i.deferUpdate();
+        return;
+    }
+
+    responseReceived = true; // Set the flag to true indicating a response has been received
+
+    if (i.customId === 'event_yes') {
+        await i.update({ content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", components: [confirmation_row] });
+       
+        //yesResponder.push(i.user.username);
+        
+    } else if (i.customId === 'confirm_yes') {
+        yesResponder.push(i.user.username);
+        await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
+        
+                await collection.updateOne(
+                    {}, 
+                    { $set: { status: `The next event is scheduled and will start on time. `, ranker: `${i.user.username}` } }
+                );
+    } else if (i.customId === 'confirm_no') {
+        await i.update({ content: questionMessage, components: [row]})
+    } else if (i.customId === 'event_no') {
+        noResponders.push(i.user.username);
+        await i.deferUpdate();
+
+        await collection.updateOne(
+            {}, 
+            { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
+        );
+
+        // Disable only the "No" button for the user who clicked it
+        const disabledRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('event_yes')
+                    .setLabel('Yes')
+                    .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                    .setCustomId('event_no')
+                    .setLabel('No')
+                    .setStyle(ButtonStyle.Danger)
+                    .setDisabled(true) // Disable the "No" button for this user
+            );
+
+        questionMessage.edit({
+            components: [disabledRow]
+        });
+    }
+}); */
