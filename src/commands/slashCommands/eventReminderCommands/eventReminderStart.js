@@ -1,5 +1,20 @@
 // fix the limiter for the button collector so it only accepts 1 response from each ranker
 
+//IDEA: 
+    // Change the whole UI cause it's not working the way I want it to anyways
+        // The "Reminder Message" that will be sent will now show 2 buttons:
+                // "Give my availabilty." and "Check My availability"
+                        // - Give my availability will send an ephemeral message for the user that clicked it
+                        //          and it will have the ability to give their availability for the next event (the current yes/no button options)
+                        //      - future idea: be able to select which event on that day you want to give availibility for
+
+                        // - Check my availability will send an ephemeral message for the user that clicked it
+                        //          and it will have the ability to check what you said your availability is for the next event (and maybe future events)
+                        //             as well as the ability to click a button like "Change my availability" to shortcut towards the GMA page
+                
+        // Notes: 
+                // The ephemeral messages will display the current status (meaning if you press yes then it will edit the ephemeral and say you are hosting the event/no then it will disable that button) 
+
 //IDEA:
         // After clicking yes, it edits the button so it will follow up with a
         // confirmation to make sure they mean yes, then it will update the 
@@ -241,94 +256,3 @@ module.exports = {
         } */
     },
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// let responseReceived = false;
-
-/* collector.on('collect', async i => {
-    console.log('Collector received a response.');
-
-    if (responseReceived) {
-        // If a response has already been received, ignore further interactions
-        await i.deferUpdate();
-        return;
-    }
-
-    responseReceived = true; // Set the flag to true indicating a response has been received
-
-    if (i.customId === 'event_yes') {
-        await i.update({ content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", components: [confirmation_row] });
-       
-        //yesResponder.push(i.user.username);
-        
-    } else if (i.customId === 'confirm_yes') {
-        yesResponder.push(i.user.username);
-        await i.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${i.user.username}`, components: [] });
-        
-                await collection.updateOne(
-                    {}, 
-                    { $set: { status: `The next event is scheduled and will start on time. `, ranker: `${i.user.username}` } }
-                );
-    } else if (i.customId === 'confirm_no') {
-        await i.update({ content: questionMessage, components: [row]})
-    } else if (i.customId === 'event_no') {
-        noResponders.push(i.user.username);
-        await i.deferUpdate();
-
-        await collection.updateOne(
-            {}, 
-            { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
-        );
-
-        // Disable only the "No" button for the user who clicked it
-        const disabledRow = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('event_yes')
-                    .setLabel('Yes')
-                    .setStyle(ButtonStyle.Success),
-                new ButtonBuilder()
-                    .setCustomId('event_no')
-                    .setLabel('No')
-                    .setStyle(ButtonStyle.Danger)
-                    .setDisabled(true) // Disable the "No" button for this user
-            );
-
-        questionMessage.edit({
-            components: [disabledRow]
-        });
-    }
-}); */
