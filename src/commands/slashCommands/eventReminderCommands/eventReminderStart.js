@@ -121,18 +121,18 @@ module.exports = {
 
                         const questionMessage = await rankersChannel.send({
                             // <@&${RANKER_PING_ROLE_ID}>
-                            content: `<@&${RANKER_PING_ROLE_ID}>, are you able to host the event in 1 hour and 30 minutes?`,
+                            content: `<@&${RANKER_PING_ROLE_ID}>, are you able to host the event in 1 hour and 45 minutes?`,
                             components: [row]
                         });
 
                         setTimeout(async () => {
                             // After reminderTime minutes, send the reminder message to the announcements channel
                             if (yesResponder.length > 0) {
-                                await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour and 30 minutes.`);
+                                await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour.`);
                             } else {
                                 await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
                             }
-                        }, reminderTime * 60000); // maybe 1 min
+                        }, reminderTime * 60000); // maybe 1 hour
 
                         const filter = i => i.customId === 'event_yes' || i.customId === 'event_no';
                         const collector = questionMessage.createMessageComponentCollector({ filter, time: reminderTime * 60000 });
@@ -228,9 +228,9 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('30 15 * * 1,3,5', 45); // 3:30 PM on Monday, Wednesday, and Friday
-            scheduleReminder('00 18 * * 1,3,5', 45);  // 6:00 PM on Monday, Wednesday, and Friday
-            scheduleReminder('30 20 * * 1,3,5', 45); // 8:30 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('15 15 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('45 17 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('15 20 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
