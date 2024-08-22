@@ -11,9 +11,24 @@
                         // - Check my availability will send an ephemeral message for the user that clicked it
                         //          and it will have the ability to check what you said your availability is for the next event (and maybe future events)
                         //             as well as the ability to click a button like "Change my availability" to shortcut towards the GMA page
+                        // - You should be able to check the availability of others as well for the next event
                 
+        // Updating database info:
+            // Queries:
+                    // pull from database your current availability
+
+
+            // Update/input collections:
+                    // Make it so it updates the database for logs and /event-status more often to more accurately show the info
+                    // log:
+                            // Immediately when a ranker says no
+                            // Immediately, even before announcement, when a ranker says yes
+                            // Put in your availability
+
         // Notes: 
                 // The ephemeral messages will display the current status (meaning if you press yes then it will edit the ephemeral and say you are hosting the event/no then it will disable that button) 
+                // Update the query search? Maybe update the way the collection is saved in the Database
+                // Might have to edit the time objects on the other collectors (might mess with the timing)
 
 //IDEA:
         // After clicking yes, it edits the button so it will follow up with a
@@ -90,8 +105,41 @@ module.exports = {
             if (!rankersChannel || !announcementsChannel || !eventPingRole || !rankerPingRole) {
                 throw new Error('One or more IDs are invalid.');
             }
+            
+            // old first row buttons:
 
-            const row = new ActionRowBuilder()
+            /* const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('event_yes')
+                        .setLabel('Yes')
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId('event_no')
+                        .setLabel('No')
+                        .setStyle(ButtonStyle.Danger)
+                ); */
+
+
+                // First page of buttons (server side, aka NOT ephemeral), for availability info
+                const avail_row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('give_availability')
+                        .setLabel('Give My Availability')
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
+                        .setCustomId('check_availability')
+                        .setLabel('Check My Availability')
+                        .setStyle(ButtonStyle.Primary)
+                );
+            
+            // old + new confirmation buttons:
+                
+
+                // Second page for give_availability, same as old ones, just to see if you can host event or not
+                // Ephemeral
+                const yes_no_row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('event_yes')
@@ -102,8 +150,11 @@ module.exports = {
                         .setLabel('No')
                         .setStyle(ButtonStyle.Danger)
                 );
-            
-            const confirmation_row = new ActionRowBuilder()
+
+
+                // Third page for give_availability, same as old ones, just to confirm you can host event or accidental click
+                // Ephemeral
+                const confirmation_row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('confirm_yes')
@@ -115,15 +166,34 @@ module.exports = {
                         .setStyle(ButtonStyle.Danger)
                 );
 
-            // Initialize global reminderTasks array if not already initialized
-            if (!global.reminderTasks) {
-                global.reminderTasks = [];
-            }
 
-            
-            const scheduleReminder = (cronTime, reminderTime) => {
-                const noResponders = [];
-                const yesResponder = [];
+                // For second page of check my availability, under current availability message
+                // Ephemeral
+                const change_avail = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('change_availability')
+                        .setLabel('Change My Current Availability')
+                        .setStyle(ButtonStyle.Primary)
+                );
+
+                
+                // Initialize global reminderTasks array if not already initialized
+                if (!global.reminderTasks) {
+                    global.reminderTasks = [];
+                }
+                
+                
+                const scheduleReminder = (cronTime, reminderTime) => {
+                    const noResponders = [];
+                    const yesResponder = [];
+                    
+                    const confirm_yes_embed = new EmbedBuilder()
+                        .setTitle('Ranker doing the next event:')
+                        .setDescription(`${yesResponder} Will be hosting this event.`)
+                        .setColor('Green')
+                        .setTimestamp();
+
 
                 const task = cron.schedule(cronTime, async () => {
                     try {
@@ -131,13 +201,13 @@ module.exports = {
                         await collection.updateOne(
                             {},
                             { $set: { status: `Either the event status is not ready right now. Wait for it to be closer to an event to see the status. Or the rankers haven't said their availability yet.`, ranker: null } }
-                        );
+                         );
 
 
-                        const questionMessage = await rankersChannel.send({
-                            // <@&${RANKER_PING_ROLE_ID}>
-                            content: `<@&${RANKER_PING_ROLE_ID}>, are you able to host the event in 1 hour and 45 minutes?`,
-                            components: [row]
+                        const availabilityMessage = await rankersChannel.send({
+                             // <@&${RANKER_PING_ROLE_ID}>
+                            content: `<@&${RANKER_PING_ROLE_ID}> Please give your availability for the next event.\n Scheduled for 1 hour 45 min from now.`,
+                            components: [avail_row]
                         });
 
                         setTimeout(async () => {
@@ -149,85 +219,68 @@ module.exports = {
                             }
                         }, reminderTime * 60000); // maybe 1 hour
 
-                        const filter = i => i.customId === 'event_yes' || i.customId === 'event_no';
-                        const collector = questionMessage.createMessageComponentCollector({ filter, time: reminderTime * 60000 });
-                        
-                        
-                        collector.on('collect', async i => {
-                            console.log('Collector received a response.');
-                            
-                            if (i.customId === 'event_yes') {
-                                await i.update({ content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", components: [confirmation_row] });
-                                
-                                const confirmationFilter = j => j.customId === 'confirm_yes' || j.customId === 'confirm_no' && j.user.id === i.user.id;
-                                const confirmationCollector = i.message.createMessageComponentCollector({ filter: confirmationFilter, time: reminderTime * 60000 });
-                                
-                                confirmationCollector.on('collect', async j => {
-                                    if (j.customId === 'confirm_yes') {
-                                        yesResponder.push(j.user.username);
-                                        await j.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${j.user.username}`, components: [] });
+                        const avail_filter = i => i.customId === 'give_availability' || i.customId === 'check_availability';
+                        const avail_collector = availabilityMessage.createMessageComponentCollector({ avail_filter, time: reminderTime * 60000 });
 
-                                        await collection.updateOne(
-                                            {},
-                                            { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
-                                        );
-                                    } else if (j.customId === 'confirm_no') {
-                                        await j.update({ content: questionMessage.content, components: [row] });
+
+                        avail_collector.on('collect', async i => {
+                            console.log('Availability Collector. First Page, collected a response.');
+
+                            if (i.customId === 'give_availability') {
+
+                                await interaction.response({
+                                    content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
+                                    components: [yes_no_row], 
+                                    ephemeral: true
+                                });
+
+                                const yes_no_filter = j => j.customId === 'event_yes' || j.customId === 'event_no';
+                                const yes_no_collector = interaction.message.createMessageComponentCollector({ filter: yes_no_filter, time: reminderTime * 60000 });
+
+                                yes_no_collector.on('collect', async j => {
+                                    console.log('Availability Collector. Second Page, collected a response.');
+
+                                    if (j.customId === 'event_yes') {
+                                        
+                                        await interaction.response({
+                                            content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", 
+                                            components: [confirmation_row], 
+                                            ephemeral: true
+                                        });
+
+                                        const confirmation_filter = k => k.customId === 'confirm_yes' || k.customId === 'confirm_no';
+                                        const confirmation_collector = interaction.message.createMessageComponentCollector({ filter: confirmation_filter, time: reminderTime * 60000 });
+
+                                        confirmation_collector.on('collect', async k => {
+                                            console.log('Availability Collector. Third Page, collected a response.');
+
+                                            if (k.customId === 'confirm_yes') {
+                                                yesResponder.push(j.user.username);
+
+                                                await interaction.response({ 
+                                                    embeds: [confirm_yes_embed]
+                                                });
+
+                                                await collection.updateOne(
+                                                    {},
+                                                    { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
+                                                );
+
+                                            } else if (k.customId === 'confirm_no') {
+
+                                            }
+                                        });
+                                    } else if (j.customId === 'event_no') {
+
                                     }
                                 });
 
-                                confirmationCollector.on('end', collected => {
-                                    if (!collected.size) {
-                                        noResponders.push(i.user.username);
-                                    }
-                                });
-                                
-                            } else if (i.customId === 'event_no') {
-                                noResponders.push(i.user.username);
-                                await i.deferUpdate();
-                                
-                                await collection.updateOne(
-                                    {},
-                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
-                                );
-                                
-                                const disabledRow = new ActionRowBuilder()
-                                .addComponents(
-                                    new ButtonBuilder()
-                                    .setCustomId('event_yes')
-                                    .setLabel('Yes')
-                                    .setStyle(ButtonStyle.Success),
-                                    new ButtonBuilder()
-                                    .setCustomId('event_no')
-                                    .setLabel('No')
-                                    .setStyle(ButtonStyle.Danger)
-                                    .setDisabled(true) // Disable the "No" button for this user
-                                );
-                                
-                                await questionMessage.edit({ components: [disabledRow] });
-                            }
-                        });
+                            } else if (i.customId === 'check_availability') {
 
-                        
-                        
-                        collector.on('end', async () => {
-                            if (noResponders.length === 0 && yesResponder.length === 0) {
-                                await questionMessage.edit({ content: `No responses received. No reminder has been sent.`, components: [] });
-                                
-                                await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
-                                
-                                await collection.updateOne(
-                                    {}, 
-                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `No one responded. No available rankers.` } }
-                                );
-                                
-                            } else if (noResponders.length > 0) {
-                                await questionMessage.edit({ content: `Responded with No: ${noResponders.join(', ')}`, components: [] });
-                                
-                                await collection.updateOne(
-                                    {}, 
-                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
-                                );
+                                await interaction.response({
+                                    content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", components: [change_avail], ephemeral: true
+                                });
+
                             }
                         });
                     } catch (error) {
@@ -256,3 +309,153 @@ module.exports = {
         } */
     },
 };
+
+
+
+
+
+// Function for populating database if the ranker presses the buttons 'confirm_yes' or 'confirm_no'
+async function rankerYesNo(/* confirm yes and confirm no collectors */) {
+    const client = new MongoClient(uri);
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+
+        if (i.customId === 'confirm_yes') {
+
+        }
+
+        if (i.customId === 'confirm_no') {
+
+        }
+
+        /* await db.collection('users').updateOne(
+            { userId, rank },
+            { $set: { username: user.username, position: newPosition } }
+        );
+
+        await db.collection(collectionName).insertOne({
+            userId,
+            username,
+            
+        }); */
+    } finally {
+        await client.close();
+    }
+}
+
+
+
+
+
+
+// Old for reference:
+
+
+/* try {
+    // Clear the status and ranker fields
+    await collection.updateOne(
+        {},
+        { $set: { status: `Either the event status is not ready right now. Wait for it to be closer to an event to see the status. Or the rankers haven't said their availability yet.`, ranker: null } }
+    );
+
+
+    const questionMessage = await rankersChannel.send({
+        // <@&${RANKER_PING_ROLE_ID}>
+        content: `<@&${RANKER_PING_ROLE_ID}>, are you able to host the event in 1 hour and 45 minutes?`,
+        components: [row]
+    });
+
+    setTimeout(async () => {
+        // After reminderTime minutes, send the reminder message to the announcements channel
+        if (yesResponder.length > 0) {
+            await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour.`);
+        } else {
+            await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
+        }
+    }, reminderTime * 60000); // maybe 1 hour
+
+    const filter = i => i.customId === 'event_yes' || i.customId === 'event_no';
+    const collector = questionMessage.createMessageComponentCollector({ filter, time: reminderTime * 60000 });
+    
+    
+    collector.on('collect', async i => {
+        console.log('Collector received a response.');
+        
+        if (i.customId === 'event_yes') {
+            await i.update({ content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", components: [confirmation_row] });
+            
+            const confirmationFilter = j => j.customId === 'confirm_yes' || j.customId === 'confirm_no' && j.user.id === i.user.id;
+            const confirmationCollector = i.message.createMessageComponentCollector({ filter: confirmationFilter, time: reminderTime * 60000 });
+            
+            confirmationCollector.on('collect', async j => {
+                if (j.customId === 'confirm_yes') {
+                    yesResponder.push(j.user.username);
+                    await j.update({ content: `Thank you! The reminder has been sent to the announcements channel. Ranker that will be doing the event: ${j.user.username}`, components: [] });
+
+                    await collection.updateOne(
+                        {},
+                        { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
+                    );
+                } else if (j.customId === 'confirm_no') {
+                    await j.update({ content: questionMessage.content, components: [row] });
+                }
+            });
+
+            confirmationCollector.on('end', collected => {
+                if (!collected.size) {
+                    noResponders.push(i.user.username);
+                }
+            });
+            
+        } else if (i.customId === 'event_no') {
+            noResponders.push(i.user.username);
+            await i.deferUpdate();
+            
+            await collection.updateOne(
+                {},
+                { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
+            );
+            
+            const disabledRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                .setCustomId('event_yes')
+                .setLabel('Yes')
+                .setStyle(ButtonStyle.Success),
+                new ButtonBuilder()
+                .setCustomId('event_no')
+                .setLabel('No')
+                .setStyle(ButtonStyle.Danger)
+                .setDisabled(true) // Disable the "No" button for this user
+            );
+            
+            await questionMessage.edit({ components: [disabledRow] });
+        }
+    });
+
+    
+    
+    collector.on('end', async () => {
+        if (noResponders.length === 0 && yesResponder.length === 0) {
+            await questionMessage.edit({ content: `No responses received. No reminder has been sent.`, components: [] });
+            
+            await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
+            
+            await collection.updateOne(
+                {}, 
+                { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `No one responded. No available rankers.` } }
+            );
+            
+        } else if (noResponders.length > 0) {
+            await questionMessage.edit({ content: `Responded with No: ${noResponders.join(', ')}`, components: [] });
+            
+            await collection.updateOne(
+                {}, 
+                { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
+            );
+        }
+    });
+} catch (error) {
+console.error('Failed to send question message or create collector:', error);
+} */
