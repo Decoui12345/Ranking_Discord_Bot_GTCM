@@ -29,6 +29,7 @@
                 // The ephemeral messages will display the current status (meaning if you press yes then it will edit the ephemeral and say you are hosting the event/no then it will disable that button) 
                 // Update the query search? Maybe update the way the collection is saved in the Database
                 // Might have to edit the time objects on the other collectors (might mess with the timing)
+                // Update /event-status command to add a button to it to see the availability of each ranker
 
 //IDEA:
         // After clicking yes, it edits the button so it will follow up with a
@@ -45,14 +46,14 @@ const { MongoClient } = require('mongodb');
 require('dotenv').config();
 // const moment = require('moment-timezone');
 
-const RANKERS_CHANNEL_ID = '1135037357754695761';
+/* const RANKERS_CHANNEL_ID = '1135037357754695761';
 const ANNOUNCEMENTS_CHANNEL_ID = '1166953869293654146';
 const EVENT_PING_ROLE_ID = '1156687290895179797';
-const RANKER_PING_ROLE_ID = '1134266246456680569';
-/* const RANKERS_CHANNEL_ID = '1244081913522688010'; // bot testing
+const RANKER_PING_ROLE_ID = '1134266246456680569'; */
+const RANKERS_CHANNEL_ID = '1244081913522688010'; // bot testing
 const ANNOUNCEMENTS_CHANNEL_ID = '1244081913522688010'; // bot testing
 const EVENT_PING_ROLE_ID = '1222257217227591780'; // wood
-const RANKER_PING_ROLE_ID = '1215381867466072204'; // programmer */
+const RANKER_PING_ROLE_ID = '1215381867466072204'; // programmer
 
 const uri = process.env.MONGODB_URI;
 const dbName = 'events';
@@ -188,96 +189,133 @@ module.exports = {
                     const noResponders = [];
                     const yesResponder = [];
                     
-                    const confirm_yes_embed = new EmbedBuilder()
-                        .setTitle('Ranker doing the next event:')
-                        .setDescription(`${yesResponder} Will be hosting this event.`)
-                        .setColor('Green')
-                        .setTimestamp();
-
-
-                const task = cron.schedule(cronTime, async () => {
-                    try {
-                        // Clear the status and ranker fields
-                        await collection.updateOne(
-                            {},
-                            { $set: { status: `Either the event status is not ready right now. Wait for it to be closer to an event to see the status. Or the rankers haven't said their availability yet.`, ranker: null } }
-                         );
-
-
-                        const availabilityMessage = await rankersChannel.send({
-                             // <@&${RANKER_PING_ROLE_ID}>
-                            content: `<@&${RANKER_PING_ROLE_ID}> Please give your availability for the next event.\n Scheduled for 1 hour 45 min from now.`,
-                            components: [avail_row]
-                        });
-
-                        setTimeout(async () => {
-                            // After reminderTime minutes, send the reminder message to the announcements channel
-                            if (yesResponder.length > 0) {
-                                await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour.`);
-                            } else {
-                                await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
-                            }
-                        }, reminderTime * 60000); // maybe 1 hour
-
-                        const avail_filter = i => i.customId === 'give_availability' || i.customId === 'check_availability';
-                        const avail_collector = availabilityMessage.createMessageComponentCollector({ avail_filter, time: reminderTime * 60000 });
-
-
-                        avail_collector.on('collect', async i => {
-                            console.log('Availability Collector. First Page, collected a response.');
-
-                            if (i.customId === 'give_availability') {
-
-                                await interaction.response({
-                                    content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
-                                    components: [yes_no_row], 
-                                    ephemeral: true
-                                });
-
-                                const yes_no_filter = j => j.customId === 'event_yes' || j.customId === 'event_no';
-                                const yes_no_collector = interaction.message.createMessageComponentCollector({ filter: yes_no_filter, time: reminderTime * 60000 });
-
-                                yes_no_collector.on('collect', async j => {
-                                    console.log('Availability Collector. Second Page, collected a response.');
-
-                                    if (j.customId === 'event_yes') {
+                    
+                    
+                    
+                    
+                    const task = cron.schedule(cronTime, async () => {
+                        try {
+                            console.log('Start of task');
+                            // Clear the status and ranker fields
+                            await collection.updateOne(
+                                {},
+                                { $set: { status: `Either the event status is not ready right now. Wait for it to be closer to an event to see the status. Or the rankers haven't said their availability yet.`, ranker: null } }
+                            );
+                            
+                            
+                            const availabilityMessage = await rankersChannel.send({
+                                // <@&${RANKER_PING_ROLE_ID}>
+                                content: `<@&${RANKER_PING_ROLE_ID}> Please give your availability for the next event.\n Scheduled for 1 hour 45 min from now.`,
+                                components: [avail_row]
+                            });
+                            console.log("Sent availability message, see it?");
+                            
+                            
+                            
+                            
+                            setTimeout(async () => {
+                                // After reminderTime minutes, send the reminder message to the announcements channel
+                                if (yesResponder.length > 0) {
+                                    await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour.`);
+                                } else {
+                                    await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
+                                }
+                            }, reminderTime * 60000); // maybe 1 hour
+                            
+                            const avail_filter = i => i.customId === 'give_availability' || i.customId === 'check_availability';
+                            const avail_collector = availabilityMessage.createMessageComponentCollector({ avail_filter, time: reminderTime * 60000 });
+                            
+                            
+                            avail_collector.on('collect', async i => {
+                                console.log('Availability Collector. First Page, collected a response.');
+                                
+                                if (i.customId === 'give_availability') {
+                                    await i.deferReply({ ephemeral: true });
+                                    
+                                    const yes_no_question_ephemeral = await i.followUp({
+                                        content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
+                                        components: [yes_no_row], 
+                                        ephemeral: true
+                                    });
+                                    
+                                    const yes_no_filter = j => j.customId === 'event_yes' || j.customId === 'event_no';
+                                    const yes_no_collector = yes_no_question_ephemeral.createMessageComponentCollector({ filter: yes_no_filter, time: reminderTime * 60000 });
+                                    
+                                    yes_no_collector.on('collect', async j => {
+                                        console.log('Availability Collector. Second Page, collected a response.');
                                         
-                                        await interaction.response({
-                                            content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", 
-                                            components: [confirmation_row], 
-                                            ephemeral: true
-                                        });
+                                        if (j.customId === 'event_yes') {
+                                            await j.deferReply({ ephemeral: true });
+                                            
+                                            const confirm_answer_ephemeral = await j.followUp({
+                                                content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", 
+                                                components: [confirmation_row], 
+                                                ephemeral: true
+                                            });
+                                            
+                                            const confirmation_filter = k => k.customId === 'confirm_yes' || k.customId === 'confirm_no';
+                                            const confirmation_collector = confirm_answer_ephemeral.createMessageComponentCollector({ filter: confirmation_filter, time: reminderTime * 60000 });
+                                            
+                                            confirmation_collector.on('collect', async k => {
+                                                console.log('Availability Collector. Third Page, collected a response.');
+                                                
+                                                if (k.customId === 'confirm_yes') {
+                                                    yesResponder.push(k.user.id);
+                                                    await k.deferReply();
+                                                    
+                                                    const confirm_yes_embed = new EmbedBuilder()
+                                                        .setTitle('Ranker doing the next event:')
+                                                        .setDescription(`${yesResponder.map(userId => `<@${userId}>`)} Updated their availability.\nThey will be hosting this event.`)
+                                                        .setColor('Green')
+                                                        .setTimestamp();
 
-                                        const confirmation_filter = k => k.customId === 'confirm_yes' || k.customId === 'confirm_no';
-                                        const confirmation_collector = interaction.message.createMessageComponentCollector({ filter: confirmation_filter, time: reminderTime * 60000 });
 
-                                        confirmation_collector.on('collect', async k => {
-                                            console.log('Availability Collector. Third Page, collected a response.');
-
-                                            if (k.customId === 'confirm_yes') {
-                                                yesResponder.push(j.user.username);
-
-                                                await interaction.response({ 
-                                                    embeds: [confirm_yes_embed]
+                                                    await k.followUp({ 
+                                                        embeds: [confirm_yes_embed]
+                                                        });
+                                                        
+                                                        await collection.updateOne(
+                                                            {},
+                                                            { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${k.user.username}` } }
+                                                        );
+                                                        
+                                                    } else if (k.customId === 'confirm_no') {
+                                                        await k.deferReply({ ephemeral: true });
+                                                        
+                                                        await k.followUp({
+                                                            content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
+                                                            components: [yes_no_row], 
+                                                            ephemeral: true
+                                                        });
+                                                        
+                                                    }
                                                 });
+                                            } else if (j.customId === 'event_no') {
+                                                noResponders.push(j.user.id);
+                                                await j.deferReply();
+                                                
+                                                const confirm_no_embed = new EmbedBuilder()
+                                                .setTitle('Ranker not available:')
+                                                .setDescription(`${noResponders.map(userId => `<@${userId}>`).join(', ')} Updated their availability.\nThey can not do the next event.`)
+                                                .setColor('Red')
+                                                .setTimestamp();
 
+                                                await j.followUp({
+                                                    embeds: [confirm_no_embed]
+                                                });
+                                                console.log("noResponders:", noResponders);
+                                                
                                                 await collection.updateOne(
                                                     {},
-                                                    { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
+                                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
                                                 );
-
-                                            } else if (k.customId === 'confirm_no') {
-
-                                            }
-                                        });
-                                    } else if (j.customId === 'event_no') {
-
                                     }
                                 });
 
                             } else if (i.customId === 'check_availability') {
+                                await i.deferReply({ ephemeral: true });
 
-                                await interaction.response({
+                                await i.followUp({
                                     content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", components: [change_avail], ephemeral: true
                                 });
 
@@ -296,9 +334,9 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('15 15 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('45 17 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
-            scheduleReminder('15 20 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('51 15 * * 1,4,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('54 15 * * 1,4,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('59 15 * * 1,4,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
