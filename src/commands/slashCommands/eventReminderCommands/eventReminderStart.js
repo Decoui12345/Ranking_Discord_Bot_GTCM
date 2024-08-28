@@ -239,8 +239,22 @@ module.exports = {
                             } else if (i.customId === 'check_availability') {
                                 await i.deferReply({ ephemeral: true });
 
+                                let current_avail = new EmbedBuilder()
+                                    .setTitle(`You currently haven't set your availability.`)
+                                    .setColor('Grey')
+
+                                if (noResponders.has(i.user.id)) {
+                                    current_avail.setTitle(`You have said you can not do the event.`), 
+                                    current_avail.setColor('Red');
+                                } else if (yesResponder.has(i.user.id)) {
+                                    current_avail.setTitle(`You have said you can do this event.`), 
+                                    current_avail.setColor('Green');
+                                } else {
+                                    current_avail.setTitle(`You currently haven't set your availability`);
+                                }
+
                                 const checking = await i.followUp({
-                                    content: 'Checking Availability...',
+                                    embeds: [current_avail],
                                     components: [change_avail],
                                     ephemeral: true
                                 });
@@ -252,7 +266,7 @@ module.exports = {
                                     console.log('Check Availability collector. First page, collected a respone.');
 
                                     if (k.customId === 'change_availability') {
-                                        await k.deferReply();
+                                        //await k.deferReply();
 
                                         if (noResponders.has(k.user.id)) {
                                             await noResponders.delete(k.user.id);
@@ -261,7 +275,10 @@ module.exports = {
                                             await yesResponder.delete(k.user.id);
                                             console.log(`Deleted ranker: ${k.user.username}'s spot in the yesResponder set. They want to change their availability.`);
                                         }
+
+                                        await i.deleteReply();
                                         
+                                        await yes_no_easy(yesToEvent, noToEvent, k, yes_no_row, reminderTime, yesResponder, noResponders, collection);
 
 
 
@@ -285,8 +302,8 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('37 17 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('30 17 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('23 19 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('15 19 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
             scheduleReminder('39 10 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
