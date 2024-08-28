@@ -244,8 +244,10 @@ module.exports = {
                                     yes_no_collector.on('collect', async j => {
                                         console.log('Availability Collector. Second Page, collected a response.');
                                         
+
+                                        // If the user said they CAN do the event by pressing the Yes button
                                         if (j.customId === 'event_yes') {
-                                            await j.deferReply({ ephemeral: true });
+                                            await j.deferReply({ ephemeral: true }); // defers it for more time
 
 
                                                             // Error catching: making sure the user hasn't already given their availability to prevent them from spamming it
@@ -254,37 +256,41 @@ module.exports = {
                                                             } else if (yesResponder.has(j.user.id)) {
                                                                 console.log(`Ranker: ${j.user.id} tried saying yes mulitple times.`);
 
-                                                                await i.deleteReply();
+                                                                await i.deleteReply(); // Deletes the previous message (the one with the yes or no for the event)
 
+
+                                                                // Has to edit the reply because of discord API and how ephemerals work, gets deleted right after
                                                                 await j.editReply({
                                                                     content: "Processed the reply. Deleting this message momentarily.",
                                                                     ephemeral: true
                                                                 });
         
-                                                                await j.deleteReply();
+                                                                await j.deleteReply(); // deletes the processed message above
 
                                                                 await j.followUp({
                                                                     content: 'You already said you can host this next event.\nIf you want to change your availability go back to the first message and click "Check My Availabilty".',
                                                                     ephemeral: true
                                                                 }); 
-                                                                return;
+                                                                return; // Ends becuase the user already responded with their availability
                                                             } else if (noResponders.has(j.user.id)) {
                                                                 console.log(`Ranker: ${j.user.username} tried saying yes, when their availability is no`);
 
-                                                                await i.deleteReply();
+                                                                await i.deleteReply(); // Deletes the previous message (the one with the yes or no for the event)
 
+
+                                                                // Has to edit the reply because of discord API and how ephemerals work, gets deleted right after
                                                                 await j.editReply({
                                                                     content: "Processed the reply. Deleting this message momentarily.",
                                                                     ephemeral: true
                                                                 });
         
-                                                                await j.deleteReply();
+                                                                await j.deleteReply(); // Deletes the processed message
 
                                                                 await j.followUp({
                                                                     content: `You already said you can not do this event.\nIf you wish to change this, please go back to the first message and click "Check My Availability" to change it.`,
                                                                     ephemeral: true
                                                                 });
-                                                                return;
+                                                                return; // Ends becuase the user already responded with their availability
                                                             }
                                         
                                             
@@ -305,56 +311,17 @@ module.exports = {
                                             await j.followUp({ 
                                                 embeds: [confirm_yes_embed]
                                             });
+
+                                            const mentionEachUser = [...yesResponder].map( userId => `<@${userId}>`).join(`, `);
+
                                                         
                                             await collection.updateOne(
                                                 {},
-                                                { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
+                                                { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${mentionEachUser}` } }
                                             );
                                             
                                             await i.deleteReply();
                                             
-                                            /* const confirm_answer_ephemeral = await j.followUp({
-                                                content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", 
-                                                components: [confirmation_row], 
-                                                ephemeral: true
-                                            }); */
-                                            /* const confirmation_filter = k => k.customId === 'confirm_yes' || k.customId === 'confirm_no';
-                                            const confirmation_collector = confirm_answer_ephemeral.createMessageComponentCollector({ filter: confirmation_filter, time: reminderTime * 60000 });
-                                            
-                                            confirmation_collector.on('collect', async k => {
-                                                console.log('Availability Collector. Third Page, collected a response.');
-                                                
-                                                if (k.customId === 'confirm_yes') {
-                                                    yesResponder.push(k.user.id);
-                                                    await k.deferReply();
-                                                    
-                                                    const confirm_yes_embed = new EmbedBuilder()
-                                                        .setTitle('Ranker doing the next event:')
-                                                        .setDescription(`${yesResponder.map(userId => `<@${userId}>`)} Updated their availability.\nThey will be hosting this event.`)
-                                                        .setColor('Green')
-                                                        .setTimestamp();
-
-
-                                                    await k.followUp({ 
-                                                        embeds: [confirm_yes_embed]
-                                                        });
-                                                        
-                                                        await collection.updateOne(
-                                                            {},
-                                                            { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${k.user.username}` } }
-                                                        );
-                                                        
-                                                    } else if (k.customId === 'confirm_no') {
-                                                        await k.deferReply({ ephemeral: true });
-                                                        
-                                                        await k.followUp({
-                                                            content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
-                                                            components: [yes_no_row], 
-                                                            ephemeral: true
-                                                        });
-                                                        
-                                                    }
-                                                }); */
                                             } else if (j.customId === 'event_no') {
                                                 await j.deferReply({ ephemeral: true });
 
