@@ -175,7 +175,11 @@ module.exports = {
                     new ButtonBuilder()
                         .setCustomId('change_availability')
                         .setLabel('Change My Current Availability')
-                        .setStyle(ButtonStyle.Primary)
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('other_rankers')
+                        .setLabel('Other Rankers Availability')
+                        .setStyle(ButtonStyle.Secondary)
                 );
 
                 
@@ -404,12 +408,25 @@ module.exports = {
                             } else if (i.customId === 'check_availability') {
                                 await i.deferReply({ ephemeral: true });
 
-                                await i.followUp({
-                                    content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
-                                    components: [change_avail], 
+                                const checking = await i.followUp({
+                                    content: 'Checking Availability...',
+                                    components: [change_avail],
                                     ephemeral: true
                                 });
 
+                                const check_filter = k => k.customId === 'change_availability' || k.customId === 'other_rankers';
+                                const check_collector = checking.createMessageComponentCollector({ filter: check_filter, time: reminderTime * 60000 });
+ 
+                                check_collector.on('collect', async k => {
+                                    console.log('Check Availability collector. First page, collected a respone.');
+
+                                    if (k.customId === 'change_availability') {
+
+                                    } else if (k.customId === 'other_rankers') {
+
+                                    }
+                                    
+                                })
                             }
                         });
                     } catch (error) {
