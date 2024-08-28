@@ -186,8 +186,8 @@ module.exports = {
                 
                 
                 const scheduleReminder = (cronTime, reminderTime) => {
-                    const noResponders = [];
-                    const yesResponder = [];
+                    const noResponders = new Set();
+                    const yesResponder = new Set();
                     
                     
                     
@@ -245,15 +245,34 @@ module.exports = {
                                         console.log('Availability Collector. Second Page, collected a response.');
                                         
                                         if (j.customId === 'event_yes') {
-                                            await j.deferReply({ ephemeral: true });
+                                            await j.deferReply(/* { ephemeral: true } */);
+
+                                            yesResponder.push(j.user.id);
+                                                    
+                                            const confirm_yes_embed = new EmbedBuilder()
+                                                .setTitle('Ranker doing the next event:')
+                                                .setDescription(`${yesResponder.map(userId => `<@${userId}>`)} Updated their availability.\nThey will be hosting this event.`)
+                                                .setColor('Green')
+                                                .setTimestamp();
+
+
+                                            await j.followUp({ 
+                                                embeds: [confirm_yes_embed]
+                                            });
+                                                        
+                                            await collection.updateOne(
+                                                {},
+                                                { $set: { status: `The next event is scheduled and will start on time.`, ranker: `${j.user.username}` } }
+                                            );
                                             
-                                            const confirm_answer_ephemeral = await j.followUp({
+                                            await i.deleteReply();
+                                            
+                                            /* const confirm_answer_ephemeral = await j.followUp({
                                                 content: "Are you sure you're able to host this event? Click Yes if you can, No if this was an accidental click.", 
                                                 components: [confirmation_row], 
                                                 ephemeral: true
-                                            });
-                                            
-                                            const confirmation_filter = k => k.customId === 'confirm_yes' || k.customId === 'confirm_no';
+                                            }); */
+                                            /* const confirmation_filter = k => k.customId === 'confirm_yes' || k.customId === 'confirm_no';
                                             const confirmation_collector = confirm_answer_ephemeral.createMessageComponentCollector({ filter: confirmation_filter, time: reminderTime * 60000 });
                                             
                                             confirmation_collector.on('collect', async k => {
@@ -289,7 +308,7 @@ module.exports = {
                                                         });
                                                         
                                                     }
-                                                });
+                                                }); */
                                             } else if (j.customId === 'event_no') {
                                                 noResponders.push(j.user.id);
                                                 await j.deferReply();
@@ -309,6 +328,9 @@ module.exports = {
                                                     {},
                                                     { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
                                                 );
+
+                                                await i.deleteReply();
+
                                     }
                                 });
 
@@ -334,9 +356,9 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('51 15 * * 1,4,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('54 15 * * 1,4,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
-            scheduleReminder('59 15 * * 1,4,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('13 11 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('37 10 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('39 10 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
