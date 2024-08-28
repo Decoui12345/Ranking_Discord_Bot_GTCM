@@ -247,11 +247,30 @@ module.exports = {
                                         if (j.customId === 'event_yes') {
                                             await j.deferReply(/* { ephemeral: true } */);
 
-                                            yesResponder.push(j.user.id);
-                                                    
+
+                                                            // Error catching: making sure the user hasn't already given their availability to prevent them from spamming it
+                                                            if (!yesResponder.has(j.user.id) && !noResponders.has(j.user.id)) {
+                                                            yesResponder.add(j.user.id);
+                                                            } else if (yesResponder.has(j.user.id)) {
+                                                                console.log(`Ranker: ${j.user.id} tried saying yes mulitple times.`);
+
+                                                                await j.followUp({
+                                                                    content: 'You already said you can host this next event.\nIf you want to change your availability go back to the first message and click "Check My Availabilty".',
+                                                                    ephemeral: true
+                                                                }); 
+                                                            } else if (noResponders.has(j.user.id)) {
+                                                                console.log(`Ranker: ${j.user.id} tried saying yes, when their availability is no`);
+
+                                                                await j.followUp({
+                                                                    content: `You already said you can not do this event.\nIf you wish to change this, please go back to the first message and click "Check My Availability" to change it.`,
+                                                                    ephemeral: true
+                                                                });
+                                                            }
+                                        
+                                            
                                             const confirm_yes_embed = new EmbedBuilder()
                                                 .setTitle('Ranker doing the next event:')
-                                                .setDescription(`${yesResponder.map(userId => `<@${userId}>`)} Updated their availability.\nThey will be hosting this event.`)
+                                                .setDescription(`<@${j.user.id}> Updated their availability.\nThey will be hosting this event.`)
                                                 .setColor('Green')
                                                 .setTimestamp();
 
@@ -310,12 +329,30 @@ module.exports = {
                                                     }
                                                 }); */
                                             } else if (j.customId === 'event_no') {
-                                                noResponders.push(j.user.id);
                                                 await j.deferReply();
+
+
+                                                if (!noResponders.has(j.user.id) && !yesResponder.has(j.user.id)) {
+                                                    noResponders.add(j.user.id);
+                                                    } else if (noResponders.has(j.user.id)) {
+                                                        console.log(`Ranker: ${j.user.id} tried saying no mulitple times.`);
+
+                                                        await j.followUp({
+                                                            content: `You already said you can not do this event.\nIf you wish to change this, please go back to the first message and click "Check My Availability" to change it.`,
+                                                            ephemeral: true
+                                                        });
+                                                    } else if (yesResponder.has(j.user.id)) {
+                                                        console.log(`Ranker: ${j.user.id} tried saying no, when their availability is yes`);
+                                                        
+                                                        await j.followUp({
+                                                            content: 'You already said you can host this next event.\nIf you want to change your availability go back to the first message and click "Check My Availabilty".',
+                                                            ephemeral: true
+                                                        }); 
+                                                    }
                                                 
                                                 const confirm_no_embed = new EmbedBuilder()
                                                 .setTitle('Ranker not available:')
-                                                .setDescription(`${noResponders.map(userId => `<@${userId}>`).join(', ')} Updated their availability.\nThey can not do the next event.`)
+                                                .setDescription(`<@${j.user.id}> Updated their availability.\nThey can not do the next event.`)
                                                 .setColor('Red')
                                                 .setTimestamp();
 
@@ -326,7 +363,9 @@ module.exports = {
                                                 
                                                 await collection.updateOne(
                                                     {},
-                                                    { $set: { status: `There are no available rankers to help with the next event. Cancelled.`, ranker: `Said "No": ${noResponders.join(', ')}` } }
+                                                    { $set: 
+                                                        { status: `There are no available rankers to help with the next event. Cancelled.`, 
+                                                          ranker: `Said "No": ${[...noResponders].join(', ') }` } }
                                                 );
 
                                                 await i.deleteReply();
@@ -338,7 +377,9 @@ module.exports = {
                                 await i.deferReply({ ephemeral: true });
 
                                 await i.followUp({
-                                    content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", components: [change_avail], ephemeral: true
+                                    content: "Are you able to host next event? 1 hour and 45 min from when the first reminder was sent.", 
+                                    components: [change_avail], 
+                                    ephemeral: true
                                 });
 
                             }
@@ -356,8 +397,8 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('13 11 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('37 10 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('47 14 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('49 14 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
             scheduleReminder('39 10 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
