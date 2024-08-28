@@ -245,7 +245,7 @@ module.exports = {
                                         console.log('Availability Collector. Second Page, collected a response.');
                                         
                                         if (j.customId === 'event_yes') {
-                                            await j.deferReply(/* { ephemeral: true } */);
+                                            await j.deferReply({ ephemeral: true });
 
 
                                                             // Error catching: making sure the user hasn't already given their availability to prevent them from spamming it
@@ -254,6 +254,15 @@ module.exports = {
                                                             } else if (yesResponder.has(j.user.id)) {
                                                                 console.log(`Ranker: ${j.user.id} tried saying yes mulitple times.`);
 
+                                                                await i.deleteReply();
+
+                                                                await j.editReply({
+                                                                    content: "Processed the reply. Deleting this message momentarily.",
+                                                                    ephemeral: true
+                                                                });
+        
+                                                                await j.deleteReply();
+
                                                                 await j.followUp({
                                                                     content: 'You already said you can host this next event.\nIf you want to change your availability go back to the first message and click "Check My Availabilty".',
                                                                     ephemeral: true
@@ -261,6 +270,15 @@ module.exports = {
                                                                 return;
                                                             } else if (noResponders.has(j.user.id)) {
                                                                 console.log(`Ranker: ${j.user.username} tried saying yes, when their availability is no`);
+
+                                                                await i.deleteReply();
+
+                                                                await j.editReply({
+                                                                    content: "Processed the reply. Deleting this message momentarily.",
+                                                                    ephemeral: true
+                                                                });
+        
+                                                                await j.deleteReply();
 
                                                                 await j.followUp({
                                                                     content: `You already said you can not do this event.\nIf you wish to change this, please go back to the first message and click "Check My Availability" to change it.`,
@@ -276,6 +294,13 @@ module.exports = {
                                                 .setColor('Green')
                                                 .setTimestamp();
 
+
+                                                await j.editReply({
+                                                    content: "Processed the reply. Deleting this message momentarily.",
+                                                    ephemeral: true
+                                                });
+
+                                                await j.deleteReply();
 
                                             await j.followUp({ 
                                                 embeds: [confirm_yes_embed]
@@ -339,6 +364,15 @@ module.exports = {
                                                     } else if (noResponders.has(j.user.id)) {
                                                         console.log(`Ranker: ${j.user.id} tried saying no mulitple times.`);
 
+                                                        await i.deleteReply();
+
+                                                        await j.editReply({
+                                                            content: "Processed the reply. Deleting this message momentarily.",
+                                                            ephemeral: true
+                                                        });
+
+                                                        await j.deleteReply();
+                                                        
                                                         await j.followUp({
                                                             content: `You already said you can not do this event.\nIf you wish to change this, please go back to the first message and click "Check My Availability" to change it.`,
                                                             ephemeral: true
@@ -346,11 +380,23 @@ module.exports = {
                                                         return;
                                                     } else if (yesResponder.has(j.user.id)) {
                                                         console.log(`Ranker: ${j.user.username} tried saying no, when their availability is yes`);
-                                                        
+                                                    
+                                                        await i.deleteReply();
+
+
+                                                        await j.editReply({
+                                                            content: "Processed the reply. Deleting this message momentarily.",
+                                                            ephemeral: true
+                                                        });
+
+                                                        await j.deleteReply();
+
                                                         await j.followUp({
                                                             content: 'You already said you can host this next event.\nIf you want to change your availability go back to the first message and click "Check My Availabilty".',
                                                             ephemeral: true
                                                         }); 
+                                                        
+                                                        
                                                         return;
                                                     }
                                                 
@@ -360,8 +406,17 @@ module.exports = {
                                                 .setColor('Red')
                                                 .setTimestamp();
 
+                                                await j.editReply({
+                                                    content: "Processed the reply. Deleting this message momentarily.",
+                                                    ephemeral: true
+                                                });
+
+                                                await j.deleteReply();
+                                                console.log('Deleted edited reply, did it work?');
+
                                                 await j.followUp({
-                                                    embeds: [confirm_no_embed]
+                                                    embeds: [confirm_no_embed],
+                                                    ephemeral: false
                                                 });
                                                 console.log("noResponders:", noResponders);
 
@@ -403,8 +458,8 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('09 15 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('58 14 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('00 16 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('02 16 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
             scheduleReminder('39 10 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
