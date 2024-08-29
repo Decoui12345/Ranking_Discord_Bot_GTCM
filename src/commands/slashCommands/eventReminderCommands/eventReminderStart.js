@@ -283,6 +283,16 @@ module.exports = {
 
 
                                     } else if (k.customId === 'other_rankers') {
+                                        await k.deferReply({ ephemeral: true });
+
+                                        const other_rankers_embed = new EmbedBuilder()
+                                            .setTitle(`Availability of the other rankers:`)
+                                            .setFields(
+                                                { name: `Available:`, value: yesResponder.size > 0 ? `${[...yesResponder].map(userId => `<@${userId}>`).join(', ')}` : `N/A` }, 
+                                                { name: `Not Available:`, value: noResponders.size > 0 ? `${[...noResponders].map(userId => `<@${userId}>`).join(', ')}` : `N/A` }
+                                            )
+                                        
+                                        await k.editReply({ embeds: [other_rankers_embed], ephemeral: true });
 
                                     } 
                                     
@@ -302,9 +312,9 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('23 19 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('15 19 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
-            scheduleReminder('39 10 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('35 21 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('37 21 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('39 21 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
