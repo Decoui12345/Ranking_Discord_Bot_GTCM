@@ -155,7 +155,7 @@ module.exports = {
 
                 // Third page for give_availability, same as old ones, just to confirm you can host event or accidental click
                 // Ephemeral
-                const confirmation_row = new ActionRowBuilder()
+                /* const confirmation_row = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
                         .setCustomId('confirm_yes')
@@ -165,7 +165,7 @@ module.exports = {
                         .setCustomId('confirm_no')
                         .setLabel(`No, I can't do the event.`)
                         .setStyle(ButtonStyle.Danger)
-                );
+                ); */
 
 
                 // For second page of check my availability, under current availability message
@@ -219,12 +219,12 @@ module.exports = {
                             
                             setTimeout(async () => {
                                 // After reminderTime minutes, send the reminder message to the announcements channel
-                                if (yesResponder.length > 0) {
+                                if (yesResponder.size > 0) {
                                     await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Event in 1 hour.`);
                                 } else {
                                     await announcementsChannel.send(`<@&${EVENT_PING_ROLE_ID}> Next event cancelled. No rankers available.`);
                                 }
-                            }, reminderTime * 60000); // maybe 1 hour
+                            }, reminderTime * 60000); // 45 min
                             
                             const avail_filter = i => i.customId === 'give_availability' || i.customId === 'check_availability';
                             const avail_collector = availabilityMessage.createMessageComponentCollector({ avail_filter, time: reminderTime * 60000 });
@@ -312,9 +312,9 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('35 21 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('37 21 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
-            scheduleReminder('39 21 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('15 15 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('45 17 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('15 20 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
         } catch (error) {
