@@ -4,14 +4,14 @@ const { MongoClient } = require('mongodb');
 require('dotenv').config();
 // const moment = require('moment-timezone');
 
-/* const RANKERS_CHANNEL_ID = '1135037357754695761';
+const RANKERS_CHANNEL_ID = '1135037357754695761';
 const ANNOUNCEMENTS_CHANNEL_ID = '1166953869293654146';
 const EVENT_PING_ROLE_ID = '1156687290895179797';
-const RANKER_PING_ROLE_ID = '1134266246456680569'; */
-const RANKERS_CHANNEL_ID = '1244081913522688010'; // bot testing
+const RANKER_PING_ROLE_ID = '1134266246456680569';
+/* const RANKERS_CHANNEL_ID = '1244081913522688010'; // bot testing
 const ANNOUNCEMENTS_CHANNEL_ID = '1244081913522688010'; // bot testing
 const EVENT_PING_ROLE_ID = '1222257217227591780'; // wood
-const RANKER_PING_ROLE_ID = '1215381867466072204'; // programmer
+const RANKER_PING_ROLE_ID = '1215381867466072204'; // programmer */
 
 const uri = process.env.MONGODB_URI;
 const dbName = 'events';
@@ -276,7 +276,7 @@ module.exports = {
             scheduleReminder('45 17 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
             scheduleReminder('15 20 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
-            await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:30 PM, 6:00 PM, and 8:30 PM EST.', ephemeral: true });
+            await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:15 PM, 5:45 PM, and 8:15 PM EST.', ephemeral: true });
         } catch (error) {
             console.error('Failed to fetch channels or roles:', error);
             await interaction.reply({ content: 'There was an error setting up the reminders. Please check the channel and role IDs.', ephemeral: true });
