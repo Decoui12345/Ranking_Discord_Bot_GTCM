@@ -88,8 +88,13 @@ module.exports = {
             await interaction.reply({ content: 'Event code sent to early access channel.', ephemeral: true });
 
             setTimeout(async () => {
-                const announcementMessageContent = note ? `<@&${eventPingRoleId}> Code: ${eventCode}\nType of event: ${note}` : `<@&${eventPingRoleId}> Code: ${eventCode}`;
-                await eventAnnouncementsChannel.send(announcementMessageContent);
+                try{
+                    const announcementMessageContent = note ? `<@&${eventPingRoleId}> Code: ${eventCode}\nType of event: ${note}` : `<@&${eventPingRoleId}> Code: ${eventCode}`;
+                    await eventAnnouncementsChannel.send(announcementMessageContent);
+                } catch (error) {
+                    console.error('Error sending event announcement message:', error);
+                    await eventAnnouncementsChannel.send({ content: 'There was an error sending the event code, please try again or manually send it.'});
+                }
             }, 180000);
         } catch (error) {
             console.error('Error sending messages:', error);
