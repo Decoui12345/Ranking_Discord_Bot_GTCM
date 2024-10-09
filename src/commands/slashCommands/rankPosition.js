@@ -84,7 +84,9 @@ module.exports = {
                 let noPositionHistoryEmbed = new EmbedBuilder(baseEmbed).addFields({ name: 'Rank Position History', value: 'No rank position history found' });
                 pages.push(noPositionHistoryEmbed);
             }
-
+        } catch (error) {
+            console.error('Error with connecting to database to populate the pages.', error);
+            await interaction.followUp({ content:'There was an error retrieving rank history. Please try again later.', ephemeral: true });
         } finally {
             await client.close();
         }
@@ -107,30 +109,51 @@ module.exports = {
         const collector = message.createMessageComponentCollector({ time: 60000 });
 
         collector.on('collect', async (i) => {
-            if (i.customId === 'previous') {
+            try {
+                if (i.customId === 'previous') {
                 currentPage = currentPage > 0 ? --currentPage : pages.length - 1;
             } else if (i.customId === 'next') {
                 currentPage = currentPage + 1 < pages.length ? ++currentPage : 0;
             }
 
             await i.update({ embeds: [pages[currentPage]], components: [row] });
+            } catch (error) {
+                console.error('Error with changing pages', error);
+                await i.followUp({ content: 'There was an error changing pages. Please try again.', ephemeral: true });
+            }
+           
         });
 
-        collector.on('end', async () => {
-            const disabledRow = new ActionRowBuilder()
-                .addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('previous')
-                        .setLabel('Previous')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true),
-                    new ButtonBuilder()
-                        .setCustomId('next')
-                        .setLabel('Next')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true)
-                );
-            message.edit({ components: [disabledRow] });
+        collector.on('end', async (collected, reason) => {
+            console.log(`Collected ${collected.size} interactions`);
+            console.log(`Collector ended due to: ${reason}`);
+
+
+    
+        const disabledRow = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('previous')
+                    .setLabel('Previous')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true),
+                new ButtonBuilder()
+                    .setCustomId('next')
+                    .setLabel('Next')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true)
+            );
+
+        try {
+                await message.edit({ components: [disabledRow] });
+        } catch (error) {
+            if (error.code === 10008) {
+                console.warn('Message was already deleted, cannot edit.');
+            } else {
+                console.error('Error disabling buttons:', error);
+            }
+        }
+
         });
     }
 };

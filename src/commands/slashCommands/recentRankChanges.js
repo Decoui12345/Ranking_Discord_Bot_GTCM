@@ -103,7 +103,15 @@ module.exports = {
                         .setStyle(ButtonStyle.Primary)
                         .setDisabled(true)
                 );
-            message.edit({ components: [disabledRow] });
+                try {
+                        await message.edit({ components: [disabledRow] });
+                } catch (error) {
+                    if (error.code === 10008) {
+                        console.warn('Message was already deleted, cannot edit.');
+                    } else {
+                        console.error('Error disabling buttons:', error);
+                    }
+                }
         });
     }
 };
