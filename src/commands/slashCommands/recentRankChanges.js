@@ -34,7 +34,7 @@ module.exports = {
                         const user = `<@${entry.userId}>`;
                         const role = `<@&${entry.role}>`;
                         const rank = `<@&${entry.rank}>`;
-                        const timestamp = new Date(entry.timestamp).toLocaleString();
+                        const timestamp = new Date(entry.timestamp).toLocaleString("en-US", { timeZone: "America/New_York" });
                         const positionChange = entry.oldPosition !== undefined && entry.newPosition !== undefined 
                             ? `- ${user} Moved ${entry.direction} in ${rank} by ${Math.abs(entry.newPosition - entry.oldPosition)} spot(s) on ${timestamp} EST`
                             : `- ${user} moved to ${role} on ${timestamp} EST`;
