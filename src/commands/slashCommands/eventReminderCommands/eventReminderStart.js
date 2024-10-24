@@ -144,6 +144,10 @@ module.exports = {
                 // Initialize global reminderTasks array if not already initialized
                 if (!global.reminderTasks) {
                     global.reminderTasks = [];
+                } else {
+                    // Clear all existing scheduled tasks before adding new ones
+                    global.reminderTasks.forEach(task => task.stop());
+                    global.reminderTasks = [];
                 }
                 
                 
@@ -272,9 +276,9 @@ module.exports = {
             };
             
             // Schedule reminders
-            scheduleReminder('15 15 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
-            scheduleReminder('45 17 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
-            scheduleReminder('15 20 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
+            scheduleReminder('59 20 * * 1,3,5', 45); // 3:15 PM on Monday, Wednesday, and Friday
+            scheduleReminder('02 21 * * 1,3,5', 45);  // 5:45 PM on Monday, Wednesday, and Friday
+            scheduleReminder('03 21 * * 1,3,5', 45); // 8:15 PM on Monday, Wednesday, and Friday 
             
             await interaction.reply({ content: 'Reminders have been set for every Monday, Wednesday, and Friday at 3:15 PM, 5:45 PM, and 8:15 PM EST.', ephemeral: true });
         } catch (error) {
